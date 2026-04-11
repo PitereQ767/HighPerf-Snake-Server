@@ -1,5 +1,6 @@
 #include "Server.hpp"
 
+#include <cstring>
 #include <iostream>
 #include <ostream>
 #include <unistd.h>
@@ -199,12 +200,51 @@ bool Server::setUpTimer() {
 }
 
 void Server::updateGameState() {
+    moveSnakes();
+
+    if (players.empty()) return;
+
+    uint8_t buffer[1024];
+    size_t offset = 0;
+    buildGameStatePacket(buffer, offset);
+    broadcastGameStatePacket(buffer, offset);
+}
+
+void Server::moveSnakes() {
     for (auto& [fd, player] : players) {
         if (player->dirX != 0 || player->dirY != 0) {
             player->x += player->dirX;
             player->y += player->dirY;
 
             //do zaimplemontowania kolizje i jablka
+        }
+    }
+}
+
+void Server::buildGameStatePacket(uint8_t* buffer, size_t& offset) {
+
+    buffer[offset] = static_cast<uint8_t>(Protocol::MessageType::GAME_STATE);
+    offset++;
+
+    auto numPlayers = static_cast<uint16_t>(players.size());
+    memcpy(buffer + offset, &numPlayers, sizeof(numPlayers));
+    offset += sizeof(numPlayers);
+
+    for (auto& [fd, player] : players) {
+        Protocol::PlayerState playerState{player->id, player->x, player->y};
+        memcpy(buffer + offset, &playerState, sizeof(playerState));
+        offset += sizeof(playerState);
+    }
+}
+
+void Server::broadcastGameStatePacket(uint8_t *buffer, size_t& offset) {
+    for (auto& [fd, player] : players) {
+        ssize_t bytesSent = send(fd, buffer, offset, MSG_NOSIGNAL);
+
+        if (bytesSent == -1) {
+            if (errno != EAGAIN || errno != EWOULDBLOCK) { // send() moze wyrzucic blad jesli klient nie bedzie mogl odebrac wiadomosci i zwrosi EAGAIN.
+                std::cerr << "Error while sending game state packet to FD: "<< fd << std::endl;
+            }
         }
     }
 }

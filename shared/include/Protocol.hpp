@@ -7,7 +7,8 @@ namespace Protocol {
         JOIN_ACCEPT = 0x02,
         PLAYER_MOVE = 0x03,
         SPAWN_FRUIT = 0x04,
-        PLAYER_DIE = 0x05
+        PLAYER_DIE = 0x05,
+        GAME_STATE = 0x06
     };
 
     #pragma pack(push, 1)
@@ -23,6 +24,12 @@ namespace Protocol {
         MessageType type;
         uint16_t x;
         uint16_t y;
+    };
+
+    struct PlayerState {
+        uint16_t playerId;
+        int16_t x;
+        int16_t y;
     };
 
     #pragma pack(pop)

@@ -44,4 +44,8 @@ private:
 
     bool setUpTimer();
     void updateGameState();
+
+    void moveSnakes();
+    void buildGameStatePacket(uint8_t* buffer, size_t& offset);
+    void broadcastGameStatePacket(uint8_t* buffer, size_t& offset);
 };
