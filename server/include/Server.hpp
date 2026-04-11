@@ -18,6 +18,8 @@ class Server {
         std::pmr::vector<epoll_event> events;
 
         bool setUpServerSocket();
-        bool setNonBlocking();
+        bool setNonBlocking(int activeFd);
         void handleNewConnection();
+        void handleClientData(int clientFd);
+        void disconnectClient(int clientFd);
 };

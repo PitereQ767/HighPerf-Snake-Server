@@ -1,6 +1,6 @@
 find_package(Threads REQUIRED)
 
-add_executable(snake-server src/main.cpp)
+add_executable(snake-server src/main.cpp src/Server.cpp)
 
 target_include_directories(snake-server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
