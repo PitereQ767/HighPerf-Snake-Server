@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/timerfd.h>
 
 #include "Protocol.hpp"
 
@@ -57,10 +58,15 @@ void Server::run() {
     while (isRunning) {
         int numEvents = epoll_wait(epollFd, events.data(), events.size(), -1);
 
-        for (int i = 0; i < numEvents; i++) {
+        for (size_t i = 0; i < numEvents; i++) {
             int activeFd = events[i].data.fd;
             if (activeFd == serverFd) {
                 handleNewConnection();
+            }else if (activeFd == timerFd) {
+                uint64_t expirations;
+                read(timerFd, &expirations, sizeof(uint64_t));
+
+                updateGameState();
             }else {
                 handleClientData(activeFd);
             }
@@ -125,12 +131,26 @@ void Server::handleNewConnection() {
         event.data.fd = clientFd;
         epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &event);
 
+        uint16_t newId = nextPlayerId++;
+        auto newPlayer = std::make_shared<Player>(newId, clientFd);
+
+        newPlayer->x = 100; // tymczasowa pozycja startowa
+        newPlayer->y = 100;
+
+        players[clientFd] = newPlayer;
+
         std::cout << "New player: " << clientFd <<  " IP: " << inet_ntoa(clientAddr.sin_addr) << std::endl;
     }
 }
 
 void Server::disconnectClient(int clientFd) {
-    std::cout << "Disconnecting client: " << clientFd << std::endl;
+    auto it = players.find(clientFd);
+    if (it != players.end()) {
+        players.erase(it);
+    }else {
+        std::cout << "Undefined player disconected. FD: " << clientFd << std::endl;
+    }
+
     close(clientFd);
 }
 
@@ -150,6 +170,41 @@ void Server::handleClientData(int clientFd) {
             disconnectClient(clientFd);
         }else {
             std::cout << "Odebrano: " << bytesRead << " bajtow." << std::endl;
+        }
+    }
+}
+
+bool Server::setUpTimer() {
+    timerFd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+    if (timerFd == -1) {
+        std::cerr << "Error creating timerfd" << std::endl;
+        return false;
+    }
+
+    itimerspec timerConfig{};
+    timerConfig.it_value.tv_sec = 0;
+    timerConfig.it_value.tv_nsec = 100 * 1000000;
+    timerConfig.it_interval.tv_sec = 0;
+    timerConfig.it_interval.tv_nsec = 100 * 1000000;
+
+    timerfd_settime(timerFd, 0, &timerConfig, nullptr);
+
+    epoll_event event{};
+    event.events = EPOLLIN | EPOLLET;
+    event.data.fd = timerFd;
+    epoll_ctl(epollFd, EPOLL_CTL_ADD, timerFd, &event);
+
+    std::cout << "Clock is running with frequency 10 TPS." << std::endl;
+    return true;
+}
+
+void Server::updateGameState() {
+    for (auto& [fd, player] : players) {
+        if (player->dirX != 0 || player->dirY != 0) {
+            player->x += player->dirX;
+            player->y += player->dirY;
+
+            //do zaimplemontowania kolizje i jablka
         }
     }
 }
