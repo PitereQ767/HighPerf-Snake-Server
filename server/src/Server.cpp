@@ -239,7 +239,7 @@ void Server::buildGameStatePacket(uint8_t* buffer, size_t& offset) {
 
 void Server::broadcastGameStatePacket(uint8_t *buffer, size_t& offset) {
     for (auto& [fd, player] : players) {
-        ssize_t bytesSent = send(fd, buffer, offset, MSG_NOSIGNAL);
+        ssize_t bytesSent = send(fd, buffer, offset, MSG_NOSIGNAL); //zapobieganie SIGPIPE
 
         if (bytesSent == -1) {
             if (errno != EAGAIN || errno != EWOULDBLOCK) { // send() moze wyrzucic blad jesli klient nie bedzie mogl odebrac wiadomosci i zwrosi EAGAIN.
