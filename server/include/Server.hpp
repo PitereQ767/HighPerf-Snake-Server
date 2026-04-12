@@ -28,7 +28,7 @@ private:
     int epollFd{-1};
     bool isRunning{false};
 
-    std::pmr::vector<epoll_event> events;
+    std::vector<epoll_event> events;
 
     uint16_t nextPlayerId{1};
     std::unordered_map<int, std::shared_ptr<Player>> players;
