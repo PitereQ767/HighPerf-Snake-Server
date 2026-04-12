@@ -20,7 +20,10 @@ set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(imgui-sfml)
 
-add_executable(snake-client src/main.cpp src/NetworkClient.cpp)
+add_executable(snake-client
+        src/main.cpp
+        src/NetworkClient.cpp
+        src/GameClient.cpp)
 
 target_include_directories(snake-client PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 

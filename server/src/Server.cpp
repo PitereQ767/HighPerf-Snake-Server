@@ -166,9 +166,11 @@ void Server::handleClientData(int clientFd) {
                 break;
             }else {
                 disconnectClient(clientFd);
+                return;
             }
         }else if (bytesRead == 0) {
             disconnectClient(clientFd);
+            return;
         }else {
             std::cout << "Odebrano: " << bytesRead << " bajtow." << std::endl;
         }

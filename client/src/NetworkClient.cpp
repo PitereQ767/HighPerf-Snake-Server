@@ -37,7 +37,8 @@ bool NetworkClient::connectToServer(const std::string& ip, int port) {
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
 
-    if (inet_pton(clientSocketFd, ip.c_str(), &serverAddr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, ip.c_str(), &serverAddr.sin_addr) <= 0) {
+        std::cout << ip << std::endl;
         std::cout << "Invalid IP address to server" << std::endl;
         return false;
     }

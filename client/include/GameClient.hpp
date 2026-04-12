@@ -1,0 +1,28 @@
+#pragma once
+
+#include <SFML/Graphics.hpp>
+#include "NetworkClient.hpp"
+
+
+class GameClient {
+public:
+    GameClient();
+    ~GameClient();
+
+    void run();
+
+private:
+    void processEvents();
+    void update();
+    void render();
+
+    void renderUI();
+
+    sf::RenderWindow window;
+    sf::Clock clock;
+
+    NetworkClient network;
+
+    char ipBuffer[256]{"127.0.0.1"};
+    int portBuffer{8080};
+};
