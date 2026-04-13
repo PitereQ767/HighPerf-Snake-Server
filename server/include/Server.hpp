@@ -36,6 +36,8 @@ private:
     uint16_t nextPlayerId{1};
     std::unordered_map<int, std::shared_ptr<Player>> players;
 
+    std::vector<Protocol::Apple> apples;
+
     int timerFd{-1};
 
 
@@ -52,4 +54,6 @@ private:
     void processingData(uint8_t* buffer, int clientFd, ssize_t bytesRead);
     void buildGameStatePacket(uint8_t* buffer, size_t& offset);
     void broadcastGameStatePacket(uint8_t* buffer, size_t& offset);
+    void spawnApple();
+    bool ateApple(Protocol::SnakeSegment& head, Player& player);
 };

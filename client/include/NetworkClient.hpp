@@ -24,6 +24,7 @@ public:
 
    [[nodiscard]] bool isConnected()const { return connected; }
     const std::vector<ClientPlayer> getPlayers()const { return players; }
+    const std::vector<Protocol::Apple> getApples()const { return apples; }
 
    void sendMoveDirection(Protocol::Direction dirX, Protocol::Direction dirY);
 
@@ -35,5 +36,6 @@ private:
    int clientSocketFd{-1};
    bool connected{false};
 
-   std::vector<ClientPlayer> players;
+    std::vector<ClientPlayer> players;
+    std::vector<Protocol::Apple> apples;
 };

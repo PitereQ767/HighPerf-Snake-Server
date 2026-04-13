@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/timerfd.h>
+#include <random>
 
 #include "Protocol.hpp"
 
@@ -50,6 +51,10 @@ bool Server::start() {
 
     if (!setUpTimer()) {
         return false;
+    }
+
+    for (int i = 0; i < 5; i++) {
+        spawnApple();
     }
 
     isRunning = true;
@@ -260,20 +265,41 @@ void Server::moveSnakes() {
 
             player->body.push_front(newHead);
 
-            player->body.pop_back();
+            if (!ateApple(newHead, *player)) {
+                player->body.pop_back();
+            }
 
             //do zaimplemontowania kolizje i jablka
         }
     }
 }
 
+bool Server::ateApple(Protocol::SnakeSegment& head, Player& player) {
+    for (auto it = apples.begin(); it != apples.end(); ++it) {
+        if (it->x == head.x && it->y == head.y) {
+            player.score++;
+            apples.erase(it);
+            spawnApple();
+            std::cout << "Gracz zjadl jablko. Wynik: " << player.score << std::endl;
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Server::buildGameStatePacket(uint8_t* buffer, size_t& offset) {
     buffer[offset] = static_cast<uint8_t>(Protocol::MessageType::GAME_STATE);
     offset++;
 
-    uint16_t apples = 0;
-    memcpy(&apples, buffer + offset, sizeof(apples));
-    offset += sizeof(apples);
+    uint16_t numApples = static_cast<uint16_t>(apples.size());
+    memcpy(buffer + offset, &numApples, sizeof(numApples));
+    offset += sizeof(numApples);
+
+    for (const auto& apple : apples) {
+        memcpy(buffer + offset, &apple, sizeof(apple));
+        offset += sizeof(apple);
+    }
 
     auto numPlayers = static_cast<uint16_t>(players.size());
     memcpy(buffer + offset, &numPlayers, sizeof(numPlayers));
@@ -304,4 +330,17 @@ void Server::broadcastGameStatePacket(uint8_t *buffer, size_t& offset) {
             }
         }
     }
+}
+
+void Server::spawnApple() { //zakladamy ze mapa jest 40x30
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distX(1, 38);
+    std::uniform_int_distribution<> distY(1, 28);
+
+    Protocol::Apple newApple;
+    newApple.x = distX(gen);
+    newApple.y = distY(gen);
+
+    apples.push_back(newApple);
 }

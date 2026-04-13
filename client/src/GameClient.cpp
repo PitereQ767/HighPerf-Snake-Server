@@ -120,6 +120,14 @@ void GameClient::render() {
                 window.draw(snakeRect);
             }
         }
+
+        const auto& apples = network.getApples();
+        for (const auto& apple : apples) {
+            sf::RectangleShape appleRect(sf::Vector2f(TILE_SIZE - 4.0f, TILE_SIZE - 4.0f));
+            appleRect.setPosition(apple.x * TILE_SIZE + 2.0f, apple.y * TILE_SIZE + 2.0f);
+            appleRect.setFillColor(sf::Color::Red);
+            window.draw(appleRect);
+        }
     }
 
     ImGui::SFML::Render(window);

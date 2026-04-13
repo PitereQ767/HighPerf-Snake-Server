@@ -88,6 +88,18 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
         memcpy(&numApples, buffer + offset, sizeof(numApples));
         offset += sizeof(numApples);
 
+        apples.clear();
+
+        for (int i = 0; i < numApples; i++) {
+            Protocol::Apple apple;
+
+            if (offset + sizeof(apple) > bytesRead) break;
+
+            memcpy(&apple, buffer + offset, sizeof(apple));
+            offset += sizeof(apple);
+            apples.push_back(apple);
+        }
+
         uint16_t numPlayers;
         memcpy(&numPlayers, buffer + offset, sizeof(numPlayers));
         offset += sizeof(numPlayers);
@@ -106,7 +118,7 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
             cp.playerId = pInfo.id;
             cp.score = pInfo.score;
 
-            for (int j = 0; i < pInfo.length; j++) {
+            for (int j = 0; j < pInfo.length; j++) {
                 Protocol::SnakeSegment segment;
 
                 if (offset + sizeof(segment) > bytesRead) break;
