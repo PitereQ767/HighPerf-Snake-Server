@@ -48,6 +48,10 @@ bool Server::start() {
         return false;
     }
 
+    if (!setUpTimer()) {
+        return false;
+    }
+
     isRunning = true;
     std::cout << "Initialize server successful." << std::endl;
     return true;
@@ -154,11 +158,11 @@ void Server::handleClientData(int clientFd) {
         ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 
         if (bytesRead <= 0) {
-            if (bytesRead == 0 || (errno != EAGAIN || errno != EWOULDBLOCK)) {
+            if (bytesRead == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) {
                 std::cout << "Player " << clientFd << " disconnected" << std::endl;
                 disconnectClient(clientFd);
-                break;
             }
+            break;
         }else {
             std::cout << "Odebrano: " << bytesRead << " bajtow." << std::endl;
             processingData(buffer, clientFd, bytesRead);
@@ -275,7 +279,7 @@ void Server::broadcastGameStatePacket(uint8_t *buffer, size_t& offset) {
         ssize_t bytesSent = send(fd, buffer, offset, MSG_NOSIGNAL); //zapobieganie SIGPIPE
 
         if (bytesSent == -1) {
-            if (errno != EAGAIN || errno != EWOULDBLOCK) { // send() moze wyrzucic blad jesli klient nie bedzie mogl odebrac wiadomosci i zwrosi EAGAIN.
+            if (errno != EAGAIN && errno != EWOULDBLOCK) { // send() moze wyrzucic blad jesli klient nie bedzie mogl odebrac wiadomosci i zwrosi EAGAIN.
                 std::cerr << "Error while sending game state packet to FD: "<< fd << std::endl;
             }
         }

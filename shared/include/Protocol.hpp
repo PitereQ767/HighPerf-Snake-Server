@@ -13,8 +13,8 @@ namespace Protocol {
     };
 
     enum class Direction : int8_t {
-        UP = 1,
-        DOWN = -1,
+        UP = -1,
+        DOWN = 1,
         LEFT = -1,
         RIGHT = 1,
         NEUTRAL = 0

@@ -50,7 +50,7 @@ void GameClient::processEvents() {
             switch (event.key.code) {
                 case sf::Keyboard::Up:
                 case sf::Keyboard::W:
-                    dirY = Protocol::Direction::UP; dirX = Protocol::Direction::NEUTRAL; directionChanged = true;
+                    dirX = Protocol::Direction::NEUTRAL; dirY = Protocol::Direction::UP; directionChanged = true;
                     break;
                 case sf::Keyboard::Right:
                 case sf::Keyboard::D:
@@ -107,6 +107,19 @@ void GameClient::renderUI() {
 
 void GameClient::render() {
     window.clear(sf::Color(30, 30, 30));
+
+    if (network.isConnected()) {
+        const auto& players = network.getPlayers();
+        for (const auto& player : players) {
+            sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE, TILE_SIZE));
+
+            snakeRect.setPosition(player.x * TILE_SIZE, player.y * TILE_SIZE);
+
+            snakeRect.setFillColor(sf::Color::Green);
+
+            window.draw(snakeRect);
+        }
+    }
 
     ImGui::SFML::Render(window);
     window.display();

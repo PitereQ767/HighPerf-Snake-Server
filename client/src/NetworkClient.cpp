@@ -1,6 +1,7 @@
 #include "Protocol.hpp"
 #include "NetworkClient.hpp"
 
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <ostream>
@@ -75,6 +76,29 @@ bool NetworkClient::setNonBlocking(int fd) {
     return (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1);
 }
 
+void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
+    auto messageType = static_cast<Protocol::MessageType>(buffer[0]);
+
+    if (messageType == Protocol::MessageType::GAME_STATE) {
+        size_t offset{1};
+
+        uint16_t numPlayers;
+        memcpy(&numPlayers, buffer + offset, sizeof(numPlayers));
+        offset += sizeof(numPlayers);
+
+        players.clear();
+
+        for (int i = 0; i < numPlayers; i++) {
+            Protocol::PlayerState playerState;
+            if (offset + sizeof(playerState) <= bytesRead) {
+                memcpy(&playerState, buffer + offset, sizeof(playerState));
+                offset += sizeof(playerState);
+                players.push_back(playerState);
+            }
+        }
+    }
+}
+
 void NetworkClient::reciveData() {
     if (!connected) return;
 
@@ -83,7 +107,8 @@ void NetworkClient::reciveData() {
     ssize_t numBytes = recv(clientSocketFd, buffer, sizeof(buffer), 0);
 
     if (numBytes > 0) {
-        std::cout << "Recived " << numBytes << " bytes from client" << std::endl;
+        std::cout << "Recived " << numBytes << " bytes from server" << std::endl;
+        processingClientData(buffer, numBytes);
     }else if (numBytes == 0) {
         std::cout << "Server closed connection" << std::endl;
         disconnectFromServer();

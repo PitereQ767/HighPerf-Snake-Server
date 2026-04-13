@@ -25,4 +25,5 @@ private:
 
     char ipBuffer[256]{"127.0.0.1"};
     int portBuffer{8080};
+    const float TILE_SIZE = 20.0f;
 };
