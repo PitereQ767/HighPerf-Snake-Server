@@ -3,11 +3,6 @@
 #include <SFML/Graphics.hpp>
 #include "NetworkClient.hpp"
 
-#define UP -1
-#define DOWN 1
-#define LEFT -1
-#define RIGHT 1
-#define NEUTRAL 0
 
 class GameClient {
 public:

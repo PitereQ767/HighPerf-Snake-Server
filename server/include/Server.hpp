@@ -4,13 +4,15 @@
 #include <unordered_map>
 #include <sys/epoll.h>
 
+#include "Protocol.hpp"
+
 struct Player {
     uint16_t id;
     int fd;
     int16_t x{0};
     int16_t y{0};
-    int8_t dirX{0};
-    int8_t dirY{0};
+    Protocol::Direction dirX{0};
+    Protocol::Direction dirY{0};
 
     Player(uint16_t id, int fd) : id{id}, fd{fd} {}
 };
@@ -46,6 +48,7 @@ private:
     void updateGameState();
 
     void moveSnakes();
+    void processingData(uint8_t* buffer, int clientFd, ssize_t bytesRead);
     void buildGameStatePacket(uint8_t* buffer, size_t& offset);
     void broadcastGameStatePacket(uint8_t* buffer, size_t& offset);
 };

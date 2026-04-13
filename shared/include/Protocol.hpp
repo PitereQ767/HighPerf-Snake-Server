@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 
+
 namespace Protocol {
     enum class MessageType : uint8_t {
         JOIN_REQUEST = 0x01,
@@ -11,13 +12,21 @@ namespace Protocol {
         GAME_STATE = 0x06
     };
 
+    enum class Direction : int8_t {
+        UP = 1,
+        DOWN = -1,
+        LEFT = -1,
+        RIGHT = 1,
+        NEUTRAL = 0
+    };
+
     #pragma pack(push, 1)
 
     struct MovePacket {
         MessageType type;
         uint16_t playerId;
-        int8_t dirX;
-        int8_t dirY;
+        Direction dirX;
+        Direction dirY;
     };
 
     struct FruitSpawnPacket {

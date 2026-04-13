@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include "Protocol.hpp"
 
 class NetworkClient {
 public:
@@ -15,7 +16,7 @@ public:
 
    [[nodiscard]] bool isConnected()const { return connected; }
 
-   void sendMoveDirection(int8_t dirX, int8_t dirY);
+   void sendMoveDirection(Protocol::Direction dirX, Protocol::Direction dirY);
 
 private:
    bool setNonBlocking(int fd);

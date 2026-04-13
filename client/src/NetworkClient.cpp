@@ -94,7 +94,7 @@ void NetworkClient::reciveData() {
     }
 }
 
-void NetworkClient::sendMoveDirection(int8_t dirX, int8_t dirY) {
+void NetworkClient::sendMoveDirection(Protocol::Direction dirX, Protocol::Direction dirY) {
     if (!connected || clientSocketFd == -1) return;
 
     Protocol::MovePacket packet{};

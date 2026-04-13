@@ -132,15 +132,7 @@ void Server::handleNewConnection() {
         event.data.fd = clientFd;
         epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &event);
 
-        uint16_t newId = nextPlayerId++;
-        auto newPlayer = std::make_shared<Player>(newId, clientFd);
-
-        newPlayer->x = 100; // tymczasowa pozycja startowa
-        newPlayer->y = 100;
-
-        players[clientFd] = newPlayer;
-
-        std::cout << "New player: " << clientFd <<  " IP: " << inet_ntoa(clientAddr.sin_addr) << std::endl;
+        std::cout << "New connection: " << clientFd <<  " IP: " << inet_ntoa(clientAddr.sin_addr) << std::endl;
     }
 }
 
@@ -161,18 +153,57 @@ void Server::handleClientData(int clientFd) {
     while (true) {
         ssize_t bytesRead = recv(clientFd, buffer, sizeof(buffer), 0);
 
-        if (bytesRead == -1) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                break;
-            }else {
+        if (bytesRead <= 0) {
+            if (bytesRead == 0 || (errno != EAGAIN || errno != EWOULDBLOCK)) {
+                std::cout << "Player " << clientFd << " disconnected" << std::endl;
                 disconnectClient(clientFd);
-                return;
+                break;
             }
-        }else if (bytesRead == 0) {
-            disconnectClient(clientFd);
-            return;
         }else {
             std::cout << "Odebrano: " << bytesRead << " bajtow." << std::endl;
+            processingData(buffer, clientFd, bytesRead);
+        }
+    }
+}
+
+void Server::processingData(uint8_t *buffer, int clientFd, ssize_t bytesRead) {
+    auto messageType = static_cast<Protocol::MessageType>(buffer[0]);
+
+    switch (messageType) {
+        case Protocol::MessageType::JOIN_REQUEST: {
+            uint16_t newId = nextPlayerId++;
+            auto newPlayer = std::make_shared<Player>(newId, clientFd);
+
+            newPlayer->x = 10; // tymczasowa pozycja startowa
+            newPlayer->y = 10;
+            newPlayer->dirX = Protocol::Direction::RIGHT;
+            newPlayer->dirY = Protocol::Direction::NEUTRAL;
+
+            players[clientFd] = newPlayer;
+            std::cout << "Player " << clientFd << " joined" << std::endl;
+            break;
+        }
+        case Protocol::MessageType::PLAYER_MOVE:{
+            if (bytesRead >= sizeof(Protocol::MovePacket)) {
+                auto moveData = reinterpret_cast<Protocol::MovePacket *>(buffer);
+
+                auto whichPlayer = players.find(clientFd);
+                if (whichPlayer != players.end()) {
+                    auto player = whichPlayer->second;
+
+                    if ((player->dirX == Protocol::Direction::NEUTRAL && moveData->dirX != Protocol::Direction::NEUTRAL)
+                        || player->dirY == Protocol::Direction::NEUTRAL && moveData->dirY != Protocol::Direction::NEUTRAL) {
+
+                        player->dirX = moveData->dirX;
+                        player->dirY = moveData->dirY;
+                    }
+
+                    std::cout << "Player " << clientFd << " turns -> Vector: " << (int)player->dirX << ", " << (int)player->dirY << std::endl;
+                }
+            }else {
+                std::cerr << "Ignored truncated packet" << std::endl;
+            }
+            break;
         }
     }
 }
@@ -214,9 +245,9 @@ void Server::updateGameState() {
 
 void Server::moveSnakes() {
     for (auto& [fd, player] : players) {
-        if (player->dirX != 0 || player->dirY != 0) {
-            player->x += player->dirX;
-            player->y += player->dirY;
+        if (player->dirX != Protocol::Direction::NEUTRAL || player->dirY != Protocol::Direction::NEUTRAL) {
+            player->x += static_cast<signed short int>(player->dirX);
+            player->y += static_cast<signed short int>(player->dirY);
 
             //do zaimplemontowania kolizje i jablka
         }
