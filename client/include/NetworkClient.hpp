@@ -6,6 +6,12 @@
 
 #include "Protocol.hpp"
 
+struct ClientPlayer {
+    uint8_t playerId;
+    uint16_t score;
+    std::vector<Protocol::SnakeSegment> body;
+};
+
 class NetworkClient {
 public:
    NetworkClient();
@@ -17,7 +23,7 @@ public:
    void reciveData();
 
    [[nodiscard]] bool isConnected()const { return connected; }
-    const std::vector<Protocol::PlayerState> getPlayers()const { return players; }
+    const std::vector<ClientPlayer> getPlayers()const { return players; }
 
    void sendMoveDirection(Protocol::Direction dirX, Protocol::Direction dirY);
 
@@ -29,5 +35,5 @@ private:
    int clientSocketFd{-1};
    bool connected{false};
 
-   std::vector<Protocol::PlayerState> players;
+   std::vector<ClientPlayer> players;
 };

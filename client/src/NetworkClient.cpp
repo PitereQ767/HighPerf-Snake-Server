@@ -82,6 +82,12 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
     if (messageType == Protocol::MessageType::GAME_STATE) {
         size_t offset{1};
 
+        if (bytesRead < 5) return;
+
+        uint16_t numApples;
+        memcpy(&numApples, buffer + offset, sizeof(numApples));
+        offset += sizeof(numApples);
+
         uint16_t numPlayers;
         memcpy(&numPlayers, buffer + offset, sizeof(numPlayers));
         offset += sizeof(numPlayers);
@@ -89,12 +95,28 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
         players.clear();
 
         for (int i = 0; i < numPlayers; i++) {
-            Protocol::PlayerState playerState;
-            if (offset + sizeof(playerState) <= bytesRead) {
-                memcpy(&playerState, buffer + offset, sizeof(playerState));
-                offset += sizeof(playerState);
-                players.push_back(playerState);
+            Protocol::PlayerInfo pInfo;
+
+            if (offset + sizeof(pInfo) > bytesRead) break;
+
+            memcpy(&pInfo, buffer + offset, sizeof(pInfo));
+            offset += sizeof(pInfo);
+
+            ClientPlayer cp;
+            cp.playerId = pInfo.id;
+            cp.score = pInfo.score;
+
+            for (int j = 0; i < pInfo.length; j++) {
+                Protocol::SnakeSegment segment;
+
+                if (offset + sizeof(segment) > bytesRead) break;
+
+                memcpy(&segment, buffer + offset, sizeof(segment));
+                offset += sizeof(segment);
+                cp.body.push_back(segment);
             }
+
+            players.push_back(cp);
         }
     }
 }

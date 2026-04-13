@@ -111,13 +111,14 @@ void GameClient::render() {
     if (network.isConnected()) {
         const auto& players = network.getPlayers();
         for (const auto& player : players) {
-            sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE, TILE_SIZE));
+            for (const auto& segment : player.body) {
+                sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
 
-            snakeRect.setPosition(player.x * TILE_SIZE, player.y * TILE_SIZE);
+                snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
+                snakeRect.setFillColor(sf::Color::Green);
 
-            snakeRect.setFillColor(sf::Color::Green);
-
-            window.draw(snakeRect);
+                window.draw(snakeRect);
+            }
         }
     }
 
