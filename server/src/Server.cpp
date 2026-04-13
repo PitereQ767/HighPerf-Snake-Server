@@ -178,10 +178,12 @@ void Server::processingData(uint8_t *buffer, int clientFd, ssize_t bytesRead) {
             uint16_t newId = nextPlayerId++;
             auto newPlayer = std::make_shared<Player>(newId, clientFd);
 
-            newPlayer->x = 10; // tymczasowa pozycja startowa
-            newPlayer->y = 10;
             newPlayer->dirX = Protocol::Direction::RIGHT;
             newPlayer->dirY = Protocol::Direction::NEUTRAL;
+
+            newPlayer->body.push_back({10, 10});
+            newPlayer->body.push_back({9, 10});
+            newPlayer->body.push_back({8, 10});
 
             players[clientFd] = newPlayer;
             std::cout << "Player " << clientFd << " joined" << std::endl;
@@ -250,8 +252,15 @@ void Server::updateGameState() {
 void Server::moveSnakes() {
     for (auto& [fd, player] : players) {
         if (player->dirX != Protocol::Direction::NEUTRAL || player->dirY != Protocol::Direction::NEUTRAL) {
-            player->x += static_cast<signed short int>(player->dirX);
-            player->y += static_cast<signed short int>(player->dirY);
+           Protocol::SnakeSegment head = player->body.front();
+
+            Protocol::SnakeSegment newHead;
+            newHead.x = head.x + static_cast<int16_t>(player->dirX);
+            newHead.y = head.y + static_cast<int16_t>(player->dirY);
+
+            player->body.push_front(newHead);
+
+            player->body.pop_back();
 
             //do zaimplemontowania kolizje i jablka
         }
@@ -259,18 +268,29 @@ void Server::moveSnakes() {
 }
 
 void Server::buildGameStatePacket(uint8_t* buffer, size_t& offset) {
-
     buffer[offset] = static_cast<uint8_t>(Protocol::MessageType::GAME_STATE);
     offset++;
+
+    uint16_t apples = 0;
+    memcpy(&apples, buffer + offset, sizeof(apples));
+    offset += sizeof(apples);
 
     auto numPlayers = static_cast<uint16_t>(players.size());
     memcpy(buffer + offset, &numPlayers, sizeof(numPlayers));
     offset += sizeof(numPlayers);
 
     for (auto& [fd, player] : players) {
-        Protocol::PlayerState playerState{player->id, player->x, player->y};
-        memcpy(buffer + offset, &playerState, sizeof(playerState));
-        offset += sizeof(playerState);
+        Protocol::PlayerInfo playerInfo{player->id,
+            player->score,
+            static_cast<uint16_t>(player->body.size())
+        };
+        memcpy(buffer + offset, &playerInfo, sizeof(playerInfo));
+        offset += sizeof(playerInfo);
+
+        for (auto const& segment : player->body) {
+            memcpy(buffer + offset, &segment, sizeof(segment));
+            offset += sizeof(segment);
+        }
     }
 }
 

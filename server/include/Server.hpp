@@ -3,16 +3,17 @@
 #include <vector>
 #include <unordered_map>
 #include <sys/epoll.h>
+#include <deque>
 
 #include "Protocol.hpp"
 
 struct Player {
     uint16_t id;
     int fd;
-    int16_t x{0};
-    int16_t y{0};
+    std::deque<Protocol::SnakeSegment> body;
     Protocol::Direction dirX{0};
     Protocol::Direction dirY{0};
+    uint16_t score{0};
 
     Player(uint16_t id, int fd) : id{id}, fd{fd} {}
 };

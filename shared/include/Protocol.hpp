@@ -3,13 +3,12 @@
 
 
 namespace Protocol {
+    #pragma pack(push, 1)
+
     enum class MessageType : uint8_t {
         JOIN_REQUEST = 0x01,
-        JOIN_ACCEPT = 0x02,
-        PLAYER_MOVE = 0x03,
-        SPAWN_FRUIT = 0x04,
-        PLAYER_DIE = 0x05,
-        GAME_STATE = 0x06
+        PLAYER_MOVE = 0x02,
+        GAME_STATE = 0x03
     };
 
     enum class Direction : int8_t {
@@ -20,8 +19,6 @@ namespace Protocol {
         NEUTRAL = 0
     };
 
-    #pragma pack(push, 1)
-
     struct MovePacket {
         MessageType type;
         uint16_t playerId;
@@ -29,16 +26,20 @@ namespace Protocol {
         Direction dirY;
     };
 
-    struct FruitSpawnPacket {
-        MessageType type;
+    struct Apple {
         uint16_t x;
         uint16_t y;
     };
 
-    struct PlayerState {
-        uint16_t playerId;
-        int16_t x;
-        int16_t y;
+    struct SnakeSegment {
+        uint16_t x;
+        uint16_t y;
+    };
+
+    struct PlayerInfo {
+        uint16_t id;
+        uint16_t score;
+        uint16_t length;
     };
 
     #pragma pack(pop)
