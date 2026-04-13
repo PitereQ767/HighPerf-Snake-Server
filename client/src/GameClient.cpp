@@ -2,6 +2,7 @@
 #include "imgui.h"
 #include "imgui-SFML.h"
 #include <iostream>
+#include <sys/socket.h>
 
 GameClient::GameClient() {
     std::cout << "Initialize graphic engine..." << std::endl;
@@ -35,6 +36,39 @@ void GameClient::processEvents() {
 
         if (event.type == sf::Event::Closed) {
             window.close();
+        }
+
+        if (event.type == sf::Event::KeyPressed) {
+            if (ImGui::GetIO().WantCaptureKeyboard) continue; //Zapobieganie aby nie sterowac wezem podczas gdy klient bedzie wpisywal adres IP.
+
+            int8_t dirX = 0;
+            int8_t dirY = 0;
+            bool directionChanged{false};
+
+            switch (event.key.code) {
+                case sf::Keyboard::Up:
+                case sf::Keyboard::W:
+                    dirY = UP; dirX = NEUTRAL; directionChanged = true;
+                    break;
+                case sf::Keyboard::Right:
+                case sf::Keyboard::D:
+                    dirX = RIGHT; dirY = NEUTRAL; directionChanged = true;
+                    break;
+                case sf::Keyboard::Left:
+                case sf::Keyboard::A:
+                    dirX = LEFT; dirY = NEUTRAL; directionChanged = true;
+                    break;
+                case sf::Keyboard::Down:
+                case sf::Keyboard::S:
+                    dirX = NEUTRAL; dirY = DOWN; directionChanged = true;
+                    break;
+                default:
+                    break;
+            }
+
+            if (directionChanged && network.isConnected()) {
+                network.sendMoveDirection(dirX, dirY);
+            }
         }
     }
 }

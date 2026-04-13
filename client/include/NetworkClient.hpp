@@ -15,6 +15,8 @@ public:
 
    [[nodiscard]] bool isConnected()const { return connected; }
 
+   void sendMoveDirection(int8_t dirX, int8_t dirY);
+
 private:
    bool setNonBlocking(int fd);
 

@@ -94,3 +94,22 @@ void NetworkClient::reciveData() {
     }
 }
 
+void NetworkClient::sendMoveDirection(int8_t dirX, int8_t dirY) {
+    if (!connected || clientSocketFd == -1) return;
+
+    Protocol::MovePacket packet{};
+    packet.type = Protocol::MessageType::PLAYER_MOVE;
+    packet.playerId = 0;
+    packet.dirX = dirX;
+    packet.dirY = dirY;
+
+    ssize_t numBytes = send(clientSocketFd, &packet, sizeof(packet), 0);
+
+    if (numBytes < 0) {
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            std::cerr << "Failed to send player move." << std::endl;
+            disconnectFromServer();
+        }
+    }
+}
+
