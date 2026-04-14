@@ -358,5 +358,12 @@ void Server::respawnPlayer(std::shared_ptr<Player> player) {
     int16_t startY = distY(gen);
 
 
-    player->body.push_back(static_cast<Protocol::SnakeSegment>(startX, startY));
+    player->body.push_back({startX, startY});
+    player->body.push_back({static_cast<int16_t>(startX - 1), startY});
+    player->body.push_back({static_cast<int16_t>(startX - 2), startY});
+
+    player->dirX = Protocol::Direction::RIGHT;
+    player->dirY = Protocol::Direction::NEUTRAL;
+
+    std::cout << "Gracz " << player->fd << " zginal i odrodzil sie na nowo na " << player->body.front().x << ", " << player->body.front().y << std::endl;
 }
