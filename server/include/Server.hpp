@@ -31,6 +31,9 @@ private:
     int epollFd{-1};
     bool isRunning{false};
 
+    static constexpr int16_t MAP_WIDTH = 40;
+    static constexpr int16_t MAP_HEIGHT = 30;
+
     std::vector<epoll_event> events;
 
     uint16_t nextPlayerId{1};
@@ -56,4 +59,5 @@ private:
     void broadcastGameStatePacket(uint8_t* buffer, size_t& offset);
     void spawnApple();
     bool ateApple(Protocol::SnakeSegment& head, Player& player);
+    void respawnPlayer(std::shared_ptr<Player> player);
 };

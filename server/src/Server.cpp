@@ -333,8 +333,8 @@ void Server::broadcastGameStatePacket(uint8_t *buffer, size_t& offset) {
 }
 
 void Server::spawnApple() { //zakladamy ze mapa jest 40x30
-    std::random_device rd;
-    std::mt19937 gen(rd());
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
     std::uniform_int_distribution<> distX(1, 38);
     std::uniform_int_distribution<> distY(1, 28);
 
@@ -343,4 +343,20 @@ void Server::spawnApple() { //zakladamy ze mapa jest 40x30
     newApple.y = distY(gen);
 
     apples.push_back(newApple);
+}
+
+void Server::respawnPlayer(std::shared_ptr<Player> player) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distX(5, MAP_WIDTH - 5);
+    std::uniform_int_distribution<> distY(5, MAP_HEIGHT - 5);
+
+    player->score = 0;
+    player->body.clear();
+
+    int16_t startX = distX(gen);
+    int16_t startY = distY(gen);
+
+
+    player->body.push_back(static_cast<Protocol::SnakeSegment>(startX, startY));
 }
