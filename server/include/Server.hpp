@@ -58,6 +58,7 @@ private:
     void buildGameStatePacket(uint8_t* buffer, size_t& offset);
     void broadcastGameStatePacket(uint8_t* buffer, size_t& offset);
     void spawnApple();
-    bool ateApple(Protocol::SnakeSegment& head, Player& player);
+    bool ateApple(Protocol::SnakeSegment& head, Player& player); // do przeanalizowania przekazywanie player
     void respawnPlayer(std::shared_ptr<Player> player);
+    bool checkSelfCollision(std::shared_ptr<Player> player, Protocol::SnakeSegment& head);
 };

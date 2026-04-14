@@ -263,15 +263,27 @@ void Server::moveSnakes() {
             newHead.x = head.x + static_cast<int16_t>(player->dirX);
             newHead.y = head.y + static_cast<int16_t>(player->dirY);
 
+            if (checkSelfCollision(player, newHead)) {
+                respawnPlayer(player);
+                continue;
+            }
+
             player->body.push_front(newHead);
 
             if (!ateApple(newHead, *player)) {
                 player->body.pop_back();
             }
-
-            //do zaimplemontowania kolizje i jablka
         }
     }
+}
+
+bool Server::checkSelfCollision(std::shared_ptr<Player> player, Protocol::SnakeSegment& head) {
+    for (const auto& segment : player->body) {
+        if (segment.x == head.x && segment.y == head.y) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool Server::ateApple(Protocol::SnakeSegment& head, Player& player) {
