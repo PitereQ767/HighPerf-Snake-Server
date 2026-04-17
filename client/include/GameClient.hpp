@@ -24,6 +24,7 @@ private:
     void drawFrameArena();
     void drawSnakes();
     void drawApples();
+    void drawLeaderBoard();
 
     sf::RenderWindow window;
     sf::Clock clock;

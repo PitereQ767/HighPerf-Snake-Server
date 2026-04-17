@@ -151,8 +151,45 @@ void GameClient::render() {
         drawFrameArena();
         drawSnakes();
         drawApples();
+        drawLeaderBoard();
     }
 
     ImGui::SFML::Render(window);
     window.display();
+}
+
+void GameClient::drawLeaderBoard() {
+    if (fontLoaded) {
+        auto players = network.getPlayers();
+        std::sort(players.begin(), players.end(), [](const auto& a, const auto& b) {
+            return a.score > b.score;
+        });
+
+        sf::Text uiText;
+        uiText.setFont(font);
+        uiText.setCharacterSize(15);
+
+        float positionY = 10.0f;
+        float positionX = MAP_WIDTH * TILE_SIZE + 10.0f;
+        uiText.setFillColor(sf::Color::Yellow);
+        uiText.setString("--- TOP GRACZY ---");
+        uiText.setPosition(positionX, positionY);
+        window.draw(uiText);
+
+        positionY += 20.0f;
+        uiText.setFillColor(sf::Color::White);
+        uiText.setCharacterSize(13);
+        int displayCount = std::min(5, static_cast<int>(players.size()));
+        for (int i = 0; i < displayCount; ++i) {
+            std::string record = std::to_string(i + 1) +
+                                ". Gracz " + std::to_string(players[i].playerId) + ": "
+                                + std::to_string(players[i].score);
+            uiText.setString(record);
+            uiText.setPosition(positionX, positionY);
+            window.draw(uiText);
+            positionY += 20.0f;
+        }
+    }else {
+        std::cerr << "Font not loaded" << std::endl;
+    }
 }
