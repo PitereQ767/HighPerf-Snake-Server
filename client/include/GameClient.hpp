@@ -27,6 +27,7 @@ private:
     void drawSnakes();
     void drawApples();
     void drawLeaderBoard();
+    void showStatistics();
 
     sf::RenderWindow window;
     sf::Clock clock;

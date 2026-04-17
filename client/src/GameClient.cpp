@@ -132,6 +132,8 @@ void GameClient::drawFrameArena() {
 
     sf::RectangleShape arena(sf::Vector2f(arenaW, arenaH));
     arena.setFillColor(sf::Color(25, 25, 30));
+    // arena.setOutlineThickness(3.0f);
+    arena.setOutlineColor(sf::Color(200, 50, 50));
     window.draw(arena);
 
     sf::Color gridColor(38, 38, 44);
@@ -150,13 +152,13 @@ void GameClient::drawFrameArena() {
         window.draw(line, 2, sf::Lines);
     }
 
-    float borderThickness = 3.0f;
-    sf::RectangleShape border(sf::Vector2f(arenaW + borderThickness * 2, arenaH + borderThickness * 2));
-    border.setPosition(-borderThickness, -borderThickness);
-    border.setFillColor(sf::Color::Transparent);
-    border.setOutlineThickness(-borderThickness);
-    border.setOutlineColor(sf::Color(200, 50, 50));
-    window.draw(border);
+    // float borderThickness = 3.0f;
+    // sf::RectangleShape border(sf::Vector2f(arenaW + borderThickness * 2, arenaH + borderThickness * 2));
+    // border.setPosition(-borderThickness, -borderThickness);
+    // border.setFillColor(sf::Color::Transparent);
+    // border.setOutlineThickness(-borderThickness);
+    // border.setOutlineColor(sf::Color(200, 50, 50));
+    // window.draw(border);
 }
 
 void GameClient::drawSnakes() {
@@ -212,6 +214,7 @@ void GameClient::render() {
         drawSnakes();
         drawApples();
         drawLeaderBoard();
+        showStatistics();
     }
 
     ImGui::SFML::Render(window);
@@ -232,6 +235,19 @@ void GameClient::drawLeaderBoard() {
     divider.setPosition(panelX, 0);
     divider.setFillColor(sf::Color(200, 50, 50));
     window.draw(divider);
+
+    float panelY = MAP_HEIGHT * TILE_SIZE;
+    sf::RectangleShape divider2(sf::Vector2f(panelX, 1.0f));
+    divider2.setPosition(0, panelY);
+    divider2.setFillColor(sf::Color(200, 50, 50));
+    window.draw(divider2);
+
+    float panelDownW = window.getSize().x - panelW;
+    float panelDownH = window.getSize().y - MAP_HEIGHT;
+    sf::RectangleShape panelDown(sf::Vector2f(panelDownW, panelDownH));
+    panelDown.setPosition(0, panelY + 1.0f);
+    panelDown.setFillColor(sf::Color(18, 18, 24));
+    window.draw(panelDown);
 
     if (!fontLoaded) return;
 
@@ -356,4 +372,8 @@ void GameClient::renderHUD() {
     ImGui::PopStyleColor(3);
 
     ImGui::End();
+}
+
+void GameClient::showStatistics() {
+
 }
