@@ -127,12 +127,36 @@ void GameClient::renderUI() {
 }
 
 void GameClient::drawFrameArena() {
-    sf::RectangleShape arena(sf::Vector2f(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE));
-    arena.setPosition(0.0f, 0.0f);
-    arena.setFillColor(sf::Color(30, 30, 30));
-    arena.setOutlineThickness(-2.0f);
-    arena.setOutlineColor(sf::Color::Red);
+    float arenaW = MAP_WIDTH * TILE_SIZE;
+    float arenaH = MAP_HEIGHT * TILE_SIZE;
+
+    sf::RectangleShape arena(sf::Vector2f(arenaW, arenaH));
+    arena.setFillColor(sf::Color(25, 25, 30));
     window.draw(arena);
+
+    sf::Color gridColor(38, 38, 44);
+    for (int x = 1; x < MAP_WIDTH; ++x) {
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(x * TILE_SIZE, 0), gridColor),
+            sf::Vertex(sf::Vector2f(x * TILE_SIZE, arenaH), gridColor)
+        };
+        window.draw(line, 2, sf::Lines);
+    }
+    for (int y = 1; y < MAP_HEIGHT; ++y) {
+        sf::Vertex line[] = {
+            sf::Vertex(sf::Vector2f(0, y * TILE_SIZE), gridColor),
+            sf::Vertex(sf::Vector2f(arenaW, y * TILE_SIZE), gridColor)
+        };
+        window.draw(line, 2, sf::Lines);
+    }
+
+    float borderThickness = 3.0f;
+    sf::RectangleShape border(sf::Vector2f(arenaW + borderThickness * 2, arenaH + borderThickness * 2));
+    border.setPosition(-borderThickness, -borderThickness);
+    border.setFillColor(sf::Color::Transparent);
+    border.setOutlineThickness(-borderThickness);
+    border.setOutlineColor(sf::Color(200, 50, 50));
+    window.draw(border);
 }
 
 void GameClient::drawSnakes() {
@@ -195,38 +219,109 @@ void GameClient::render() {
 }
 
 void GameClient::drawLeaderBoard() {
-    if (fontLoaded) {
-        auto players = network.getPlayers();
-        std::sort(players.begin(), players.end(), [](const auto& a, const auto& b) {
-            return a.score > b.score;
-        });
+    float panelX = MAP_WIDTH * TILE_SIZE;
+    float panelW = static_cast<float>(window.getSize().x) - panelX;
+    float panelH = static_cast<float>(window.getSize().y);
 
-        sf::Text uiText;
-        uiText.setFont(font);
-        uiText.setCharacterSize(15);
+    sf::RectangleShape sidePanel(sf::Vector2f(panelW, panelH));
+    sidePanel.setPosition(panelX, 0);
+    sidePanel.setFillColor(sf::Color(18, 18, 24));
+    window.draw(sidePanel);
 
-        float positionY = 10.0f;
-        float positionX = MAP_WIDTH * TILE_SIZE + 10.0f;
-        uiText.setFillColor(sf::Color::Yellow);
-        uiText.setString("--- TOP GRACZY ---");
-        uiText.setPosition(positionX, positionY);
-        window.draw(uiText);
+    sf::RectangleShape divider(sf::Vector2f(1.0f, panelH));
+    divider.setPosition(panelX, 0);
+    divider.setFillColor(sf::Color(200, 50, 50));
+    window.draw(divider);
 
-        positionY += 20.0f;
-        uiText.setFillColor(sf::Color::White);
-        uiText.setCharacterSize(13);
-        int displayCount = std::min(5, static_cast<int>(players.size()));
-        for (int i = 0; i < displayCount; ++i) {
-            std::string record = std::to_string(i + 1) +
-                                ". " + players[i].nick + ": "
-                                + std::to_string(players[i].score);
-            uiText.setString(record);
-            uiText.setPosition(positionX, positionY);
-            window.draw(uiText);
-            positionY += 20.0f;
+    if (!fontLoaded) return;
+
+    float padX = 14.0f;
+    float posX = panelX + padX;
+    float posY = 16.0f;
+
+    sf::Text title;
+    title.setFont(font);
+    title.setCharacterSize(17);
+    title.setStyle(sf::Text::Bold);
+    title.setFillColor(sf::Color(255, 215, 0));
+    title.setString("LEADERBOARD");
+    title.setPosition(posX, posY);
+    window.draw(title);
+    posY += 28.0f;
+
+    sf::RectangleShape titleLine(sf::Vector2f(panelW - padX * 2, 1.0f));
+    titleLine.setPosition(posX, posY);
+    titleLine.setFillColor(sf::Color(80, 80, 100));
+    window.draw(titleLine);
+    posY += 10.0f;
+
+    auto players = network.getPlayers();
+    std::sort(players.begin(), players.end(), [](const auto& a, const auto& b) {
+        return a.score > b.score;
+    });
+
+    int displayCount = std::min(10, static_cast<int>(players.size()));
+    float rowH = 26.0f;
+    float colorBoxSize = 10.0f;
+
+    for (int i = 0; i < displayCount; ++i) {
+        const auto& p = players[i];
+        float rowY = posY + i * rowH;
+
+        if (i % 2 == 0) {
+            sf::RectangleShape rowBg(sf::Vector2f(panelW - padX * 2, rowH));
+            rowBg.setPosition(posX, rowY);
+            rowBg.setFillColor(sf::Color(28, 28, 36));
+            window.draw(rowBg);
         }
-    }else {
-        std::cerr << "Font not loaded" << std::endl;
+
+        sf::RectangleShape colorBox(sf::Vector2f(colorBoxSize, colorBoxSize));
+        colorBox.setPosition(posX + 4.0f, rowY + (rowH - colorBoxSize) / 2.0f);
+        colorBox.setFillColor(sf::Color(p.color.r, p.color.g, p.color.b));
+        window.draw(colorBox);
+
+        sf::Text rankText;
+        rankText.setFont(font);
+        rankText.setCharacterSize(13);
+
+        sf::Color rankColor;
+        if (i == 0) rankColor = sf::Color(255, 215, 0);
+        else if (i == 1) rankColor = sf::Color(192, 192, 192);
+        else if (i == 2) rankColor = sf::Color(205, 127, 50);
+        else rankColor = sf::Color(160, 160, 170);
+
+        rankText.setFillColor(rankColor);
+        rankText.setString("#" + std::to_string(i + 1));
+        rankText.setPosition(posX + 20.0f, rowY + 4.0f);
+        window.draw(rankText);
+
+        sf::Text nickText;
+        nickText.setFont(font);
+        nickText.setCharacterSize(13);
+        nickText.setFillColor(sf::Color(220, 220, 230));
+        nickText.setString(p.nick);
+        nickText.setPosition(posX + 48.0f, rowY + 4.0f);
+        window.draw(nickText);
+
+        sf::Text scoreText;
+        scoreText.setFont(font);
+        scoreText.setCharacterSize(13);
+        scoreText.setStyle(sf::Text::Bold);
+        scoreText.setFillColor(sf::Color(100, 220, 100));
+        scoreText.setString(std::to_string(p.score));
+        float scoreWidth = scoreText.getLocalBounds().width;
+        scoreText.setPosition(panelX + panelW - padX - scoreWidth - 4.0f, rowY + 4.0f);
+        window.draw(scoreText);
+    }
+
+    if (players.empty()) {
+        sf::Text emptyText;
+        emptyText.setFont(font);
+        emptyText.setCharacterSize(12);
+        emptyText.setFillColor(sf::Color(100, 100, 120));
+        emptyText.setString("Waiting for players...");
+        emptyText.setPosition(posX, posY);
+        window.draw(emptyText);
     }
 }
 
