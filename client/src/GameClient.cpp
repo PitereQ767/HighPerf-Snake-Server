@@ -17,6 +17,12 @@ GameClient::GameClient() {
     if (!ImGui::SFML::Init(window)) {
         std::cerr << "Failed to initialize ImGui-SFML!" << std::endl;
     }
+
+    if (font.loadFromFile(ASSETS_PATH "Carlito-Bold.ttf")) {
+        fontLoaded = true;
+    }else {
+        std::cerr << "Failed to load font!" << std::endl;
+    }
 }
 
 GameClient::~GameClient() {
@@ -105,36 +111,46 @@ void GameClient::renderUI() {
     ImGui::End();
 }
 
+void GameClient::drawFrameArena() {
+    sf::RectangleShape arena(sf::Vector2f(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE));
+    arena.setPosition(0.0f, 0.0f);
+    arena.setFillColor(sf::Color(30, 30, 30));
+    arena.setOutlineThickness(-2.0f);
+    arena.setOutlineColor(sf::Color::Red);
+    window.draw(arena);
+}
+
+void GameClient::drawSnakes() {
+    const auto& players = network.getPlayers();
+    for (const auto& player : players) {
+        for (const auto& segment : player.body) {
+            sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
+
+            snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
+            snakeRect.setFillColor(sf::Color::Green);
+
+            window.draw(snakeRect);
+        }
+    }
+}
+
+void GameClient::drawApples() {
+    const auto& apples = network.getApples();
+    for (const auto& apple : apples) {
+        sf::RectangleShape appleRect(sf::Vector2f(TILE_SIZE - 4.0f, TILE_SIZE - 4.0f));
+        appleRect.setPosition(apple.x * TILE_SIZE + 2.0f, apple.y * TILE_SIZE + 2.0f);
+        appleRect.setFillColor(sf::Color::Red);
+        window.draw(appleRect);
+    }
+}
+
 void GameClient::render() {
     window.clear(sf::Color(30, 30, 30));
 
     if (network.isConnected()) {
-        sf::RectangleShape arena(sf::Vector2f(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE));
-        arena.setPosition(0.0f, 0.0f);
-        arena.setFillColor(sf::Color(30, 30, 30));
-        arena.setOutlineThickness(-2.0f);
-        arena.setOutlineColor(sf::Color::Red);
-        window.draw(arena);
-
-        const auto& players = network.getPlayers();
-        for (const auto& player : players) {
-            for (const auto& segment : player.body) {
-                sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
-
-                snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
-                snakeRect.setFillColor(sf::Color::Green);
-
-                window.draw(snakeRect);
-            }
-        }
-
-        const auto& apples = network.getApples();
-        for (const auto& apple : apples) {
-            sf::RectangleShape appleRect(sf::Vector2f(TILE_SIZE - 4.0f, TILE_SIZE - 4.0f));
-            appleRect.setPosition(apple.x * TILE_SIZE + 2.0f, apple.y * TILE_SIZE + 2.0f);
-            appleRect.setFillColor(sf::Color::Red);
-            window.draw(appleRect);
-        }
+        drawFrameArena();
+        drawSnakes();
+        drawApples();
     }
 
     ImGui::SFML::Render(window);

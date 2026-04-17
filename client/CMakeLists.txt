@@ -34,3 +34,5 @@ target_link_libraries(snake-client PRIVATE
         sfml-system
         ImGui-SFML::ImGui-SFML
 )
+
+target_compile_definitions(snake-client PRIVATE ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")

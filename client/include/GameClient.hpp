@@ -3,6 +3,9 @@
 #include <SFML/Graphics.hpp>
 #include "NetworkClient.hpp"
 
+#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/Text.hpp>
+
 
 class GameClient {
 public:
@@ -18,6 +21,10 @@ private:
 
     void renderUI();
 
+    void drawFrameArena();
+    void drawSnakes();
+    void drawApples();
+
     sf::RenderWindow window;
     sf::Clock clock;
 
@@ -29,4 +36,7 @@ private:
     const float TILE_SIZE = 20.0f;
     static constexpr int16_t MAP_WIDTH = 40;
     static constexpr int16_t MAP_HEIGHT = 30;
+
+    sf::Font font;
+    bool fontLoaded{false};
 };
