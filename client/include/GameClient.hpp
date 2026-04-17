@@ -25,5 +25,8 @@ private:
 
     char ipBuffer[256]{"127.0.0.1"};
     int portBuffer{8080};
+
     const float TILE_SIZE = 20.0f;
+    static constexpr int16_t MAP_WIDTH = 40;
+    static constexpr int16_t MAP_HEIGHT = 30;
 };

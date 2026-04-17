@@ -263,6 +263,11 @@ void Server::moveSnakes() {
             newHead.x = head.x + static_cast<int16_t>(player->dirX);
             newHead.y = head.y + static_cast<int16_t>(player->dirY);
 
+            if (newHead.x < 0 || newHead.x >= MAP_WIDTH || newHead.y < 0 || newHead.y >= MAP_HEIGHT) {
+                respawnPlayer(player);
+                continue;
+            }
+
             if (checkSelfCollision(player, newHead)) {
                 respawnPlayer(player);
                 continue;

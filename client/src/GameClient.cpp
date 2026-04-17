@@ -109,6 +109,13 @@ void GameClient::render() {
     window.clear(sf::Color(30, 30, 30));
 
     if (network.isConnected()) {
+        sf::RectangleShape arena(sf::Vector2f(MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE));
+        arena.setPosition(0.0f, 0.0f);
+        arena.setFillColor(sf::Color(30, 30, 30));
+        arena.setOutlineThickness(-2.0f);
+        arena.setOutlineColor(sf::Color::Red);
+        window.draw(arena);
+
         const auto& players = network.getPlayers();
         for (const auto& player : players) {
             for (const auto& segment : player.body) {
