@@ -36,10 +36,24 @@ namespace Protocol {
         int16_t y;
     };
 
+    struct Color {
+        uint8_t r, g, b;
+    };
+
     struct PlayerInfo {
         uint16_t id;
         uint16_t score;
         uint16_t length;
+        char NickName[32];
+        Color color;
+    };
+
+    struct JoinPacket {
+        MessageType type = MessageType::JOIN_REQUEST;
+        char NickName[32];
+        uint8_t colorR;
+        uint8_t colorG;
+        uint8_t colorB;
     };
 
     #pragma pack(pop)

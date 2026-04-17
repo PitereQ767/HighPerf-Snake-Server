@@ -27,7 +27,7 @@ void NetworkClient::disconnectFromServer() {
     }
 }
 
-bool NetworkClient::connectToServer(const std::string& ip, int port) {
+bool NetworkClient::connectToServer(const std::string& ip, int port, const char* nick, const float* color) {
     clientSocketFd = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocketFd == -1) {
         std::cout << "Failed to create a socket (clientSocket)" << std::endl;
@@ -59,15 +59,25 @@ bool NetworkClient::connectToServer(const std::string& ip, int port) {
         std::cerr << "Failed to set non-blocking socket: "<< clientSocketFd << std::endl;
     }
 
-    uint8_t helloPacket = static_cast<uint8_t>(Protocol::MessageType::JOIN_REQUEST);
+    Protocol::JoinPacket join_packet;
+    buildJoinPacket(join_packet, nick, color);
 
-    if (send(clientSocketFd, &helloPacket, sizeof(helloPacket), MSG_NOSIGNAL) < 0) {
+    if (send(clientSocketFd, &join_packet, sizeof(Protocol::JoinPacket), MSG_NOSIGNAL) < 0) {
         std::cerr << "Failed to send JOIN REQUEST." << std::endl;
         disconnectFromServer();
         return false;
     }
 
     return true;
+}
+
+void NetworkClient::buildJoinPacket(Protocol::JoinPacket &joinPacket, const char *nick, const float *color) {
+    std::strncpy(joinPacket.NickName, nick, sizeof(joinPacket.NickName) - 1);
+    joinPacket.NickName[sizeof(joinPacket.NickName) - 1] = '\0';
+
+    joinPacket.colorR = static_cast<uint8_t>(color[0] * 255.0f);
+    joinPacket.colorG = static_cast<uint8_t>(color[1] * 255.0f);
+    joinPacket.colorB = static_cast<uint8_t>(color[2] * 255.0f);
 }
 
 bool NetworkClient::setNonBlocking(int fd) {
@@ -127,6 +137,19 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
                 offset += sizeof(segment);
                 cp.body.push_back(segment);
             }
+
+            char nickBuffer[32];
+            memcpy(nickBuffer, buffer + offset, sizeof(pInfo.NickName));
+            nickBuffer[31] = '\0';
+            cp.nick = std::string(nickBuffer);
+            offset += sizeof(pInfo.NickName);
+
+            memcpy(&cp.color.r, buffer + offset, sizeof(cp.color.r));
+            offset += sizeof(cp.color.r);
+            memcpy(&cp.color.g, buffer + offset, sizeof(cp.color.g));
+            offset += sizeof(cp.color.g);
+            memcpy(&cp.color.b, buffer + offset, sizeof(cp.color.b));
+            offset += sizeof(cp.color.b);
 
             players.push_back(cp);
         }

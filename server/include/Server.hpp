@@ -7,6 +7,7 @@
 
 #include "Protocol.hpp"
 
+
 struct Player {
     uint16_t id;
     int fd;
@@ -14,6 +15,8 @@ struct Player {
     Protocol::Direction dirX{0};
     Protocol::Direction dirY{0};
     uint16_t score{0};
+    std::string nick;
+    Protocol::Color color;
 
     Player(uint16_t id, int fd) : id{id}, fd{fd} {}
 };

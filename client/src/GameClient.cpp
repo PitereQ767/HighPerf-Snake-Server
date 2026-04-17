@@ -108,7 +108,7 @@ void GameClient::renderMenu() {
 
     if (ImGui::Button("CONNECT & PLAY", ImVec2(-1, 40))) {
 
-        network.connectToServer(ipBuffer, portBuffer);
+        network.connectToServer(ipBuffer, portBuffer, nickBuffer, color);
     }
 
     ImGui::End();
@@ -138,7 +138,7 @@ void GameClient::drawSnakes() {
             sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
 
             snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
-            snakeRect.setFillColor(sf::Color::Green);
+            snakeRect.setFillColor(sf::Color(player.color.r, player.color.g, player.color.b));
 
             window.draw(snakeRect);
         }
@@ -193,7 +193,7 @@ void GameClient::drawLeaderBoard() {
         int displayCount = std::min(5, static_cast<int>(players.size()));
         for (int i = 0; i < displayCount; ++i) {
             std::string record = std::to_string(i + 1) +
-                                ". Gracz " + std::to_string(players[i].playerId) + ": "
+                                ". " + players[i].nick + ": "
                                 + std::to_string(players[i].score);
             uiText.setString(record);
             uiText.setPosition(positionX, positionY);

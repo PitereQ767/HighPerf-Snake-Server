@@ -7,9 +7,11 @@
 #include "Protocol.hpp"
 
 struct ClientPlayer {
-    uint8_t playerId;
+    uint16_t playerId;
     uint16_t score;
     std::vector<Protocol::SnakeSegment> body;
+    std::string nick;
+    Protocol::Color color;
 };
 
 class NetworkClient {
@@ -17,7 +19,7 @@ public:
    NetworkClient();
    ~NetworkClient();
 
-   bool connectToServer(const std::string& ip, int port);
+   bool connectToServer(const std::string& ip, int port, const char* nick, const float *color);
    void disconnectFromServer();
 
    void reciveData();
@@ -31,6 +33,7 @@ public:
 private:
    bool setNonBlocking(int fd);
    void processingClientData(uint8_t* buffer, ssize_t bytesRead);
+    void buildJoinPacket(Protocol::JoinPacket& joinPacket, const char* nick, const float* color);
 
 
    int clientSocketFd{-1};

@@ -175,7 +175,60 @@ void Server::handleClientData(int clientFd) {
     }
 }
 
+void Server::processingData(uint8_t *buffer, int clientFd, ssize_t bytesRead) {
+    auto messageType = static_cast<Protocol::MessageType>(buffer[0]);
 
+    switch (messageType) {
+        case Protocol::MessageType::JOIN_REQUEST: {
+            if (bytesRead >= sizeof(Protocol::JoinPacket)) {
+                auto joinData = reinterpret_cast<Protocol::JoinPacket *>(buffer);
+
+                uint16_t newId = nextPlayerId++;
+                auto newPlayer = std::make_shared<Player>(newId, clientFd);
+
+                newPlayer->nick = std::string(joinData->NickName);
+                newPlayer->color.r = joinData->colorR;
+                newPlayer->color.g = joinData->colorG;
+                newPlayer->color.b = joinData->colorB;
+
+                newPlayer->dirX = Protocol::Direction::RIGHT;
+                newPlayer->dirY = Protocol::Direction::NEUTRAL;
+
+                newPlayer->body.push_back({10, 10});
+                newPlayer->body.push_back({9, 10});
+                newPlayer->body.push_back({8, 10});
+
+                players[clientFd] = newPlayer;
+                std::cout << "Player " << clientFd << " joined" << std::endl;
+            }else {
+                std::cerr << "Ignored too small packet" << std::endl;
+            }
+            break;
+        }
+        case Protocol::MessageType::PLAYER_MOVE:{
+            if (bytesRead >= sizeof(Protocol::MovePacket)) {
+                auto moveData = reinterpret_cast<Protocol::MovePacket *>(buffer);
+
+                auto whichPlayer = players.find(clientFd);
+                if (whichPlayer != players.end()) {
+                    auto player = whichPlayer->second;
+
+                    if ((player->dirX == Protocol::Direction::NEUTRAL && moveData->dirX != Protocol::Direction::NEUTRAL)
+                        || player->dirY == Protocol::Direction::NEUTRAL && moveData->dirY != Protocol::Direction::NEUTRAL) {
+
+                        player->dirX = moveData->dirX;
+                        player->dirY = moveData->dirY;
+                    }
+
+                    std::cout << "Player " << clientFd << " turns -> Vector: " << (int)player->dirX << ", " << (int)player->dirY << std::endl;
+                }
+            }else {
+                std::cerr << "Ignored truncated packet" << std::endl;
+            }
+            break;
+        }
+    }
+}
 
 bool Server::setUpTimer() {
     timerFd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
@@ -292,6 +345,14 @@ void Server::buildGameStatePacket(uint8_t* buffer, size_t& offset) {
             memcpy(buffer + offset, &segment, sizeof(segment));
             offset += sizeof(segment);
         }
+
+        char nickBuffer[32] = {};
+        std::strncpy(nickBuffer, player->nick.c_str(), sizeof(nickBuffer) - 1);
+        memcpy(buffer + offset, nickBuffer, sizeof(nickBuffer));
+        offset += sizeof(nickBuffer);
+
+        memcpy(buffer+offset, &player->color, sizeof(player->color));
+        offset += sizeof(player->color);
     }
 }
 
