@@ -20,6 +20,8 @@ private:
     void render();
 
     void renderUI();
+    void renderMenu();
+    void renderHUD();
 
     void drawFrameArena();
     void drawSnakes();

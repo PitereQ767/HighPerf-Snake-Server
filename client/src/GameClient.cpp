@@ -87,28 +87,39 @@ void GameClient::update() {
     renderUI();
 }
 
-void GameClient::renderUI() {
-    ImGui::Begin("Panel sterowania - Snake");
+void GameClient::renderMenu() {
+    sf::Vector2u windowSize = window.getSize();
 
-    if (!network.isConnected()) {
-        ImGui::Text("Status: Disconnected");
-        ImGui::Separator();
-        ImGui::InputText("Adres IP", ipBuffer, sizeof(ipBuffer));
-        ImGui::InputInt("Port", &portBuffer);
+    ImGui::SetNextWindowPos(ImVec2(windowSize.x / 2.0f, windowSize.y / 2.0f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-        if (ImGui::Button("Connect to server", ImVec2(150, 20))) {
-            network.connectToServer(ipBuffer, portBuffer);
-        }
-    }else {
-        ImGui::TextColored(ImVec4(0, 1, 0, 1), "Status: Connected");
-        ImGui::Separator();
+    ImGui::SetNextWindowSize(ImVec2(300, 200));
 
-        if (ImGui::Button("Disconnect", ImVec2(150, 30))) {
-            network.disconnectFromServer();
-        }
+    ImGui::Begin("Snake login", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+
+    static char nickBuffer[32] = "Player";
+    ImGui::InputText("Nick", nickBuffer, sizeof(nickBuffer));
+
+    ImGui::Separator();
+
+    static float color[3] = { 0.0f, 1.0f, 0.0f };
+    ImGui::ColorEdit3("Snake color", color);
+
+    ImGui::Spacing();
+
+    if (ImGui::Button("CONNECT & PLAY", ImVec2(-1, 40))) {
+
+        network.connectToServer(ipBuffer, portBuffer);
     }
 
     ImGui::End();
+}
+
+void GameClient::renderUI() {
+    if (!network.isConnected()) {
+        renderMenu();
+    }else {
+        renderHUD();
+    }
 }
 
 void GameClient::drawFrameArena() {
@@ -192,4 +203,37 @@ void GameClient::drawLeaderBoard() {
     }else {
         std::cerr << "Font not loaded" << std::endl;
     }
+}
+
+void GameClient::renderHUD() {
+    // Zakładając okno 1024x768 i mapę 800x600, dajemy to na samym dole po prawej
+    sf::Vector2u windowSize = window.getSize();
+    ImGui::SetNextWindowPos(ImVec2(windowSize.x - 220.0f, windowSize.y - 120.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(200.0f, 100.0f), ImGuiCond_Always);
+
+    ImGuiWindowFlags hudFlags = ImGuiWindowFlags_NoDecoration |
+                                ImGuiWindowFlags_NoMove |
+                                ImGuiWindowFlags_NoSavedSettings |
+                                ImGuiWindowFlags_NoBackground;
+
+    ImGui::Begin("HUD", nullptr, hudFlags);
+
+    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Status: CONNECTED");
+    ImGui::Spacing();
+
+    // Podmieniamy domyślne kolory ImGui tylko dla tego jednego przycisku
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));        // Normalny czerwony
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.2f, 0.2f, 1.0f)); // Jasny czerwony po najechaniu
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));  // Ciemny czerwony przy kliknięciu
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
+
+    if (ImGui::Button("DISCONNECT", ImVec2(-1, 40))) { // -1 oznacza "wypełnij całą szerokość"
+        network.disconnectFromServer();
+    }
+
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(3);
+
+    ImGui::End();
 }

@@ -175,49 +175,7 @@ void Server::handleClientData(int clientFd) {
     }
 }
 
-void Server::processingData(uint8_t *buffer, int clientFd, ssize_t bytesRead) {
-    auto messageType = static_cast<Protocol::MessageType>(buffer[0]);
 
-    switch (messageType) {
-        case Protocol::MessageType::JOIN_REQUEST: {
-            uint16_t newId = nextPlayerId++;
-            auto newPlayer = std::make_shared<Player>(newId, clientFd);
-
-            newPlayer->dirX = Protocol::Direction::RIGHT;
-            newPlayer->dirY = Protocol::Direction::NEUTRAL;
-
-            newPlayer->body.push_back({10, 10});
-            newPlayer->body.push_back({9, 10});
-            newPlayer->body.push_back({8, 10});
-
-            players[clientFd] = newPlayer;
-            std::cout << "Player " << clientFd << " joined" << std::endl;
-            break;
-        }
-        case Protocol::MessageType::PLAYER_MOVE:{
-            if (bytesRead >= sizeof(Protocol::MovePacket)) {
-                auto moveData = reinterpret_cast<Protocol::MovePacket *>(buffer);
-
-                auto whichPlayer = players.find(clientFd);
-                if (whichPlayer != players.end()) {
-                    auto player = whichPlayer->second;
-
-                    if ((player->dirX == Protocol::Direction::NEUTRAL && moveData->dirX != Protocol::Direction::NEUTRAL)
-                        || player->dirY == Protocol::Direction::NEUTRAL && moveData->dirY != Protocol::Direction::NEUTRAL) {
-
-                        player->dirX = moveData->dirX;
-                        player->dirY = moveData->dirY;
-                    }
-
-                    std::cout << "Player " << clientFd << " turns -> Vector: " << (int)player->dirX << ", " << (int)player->dirY << std::endl;
-                }
-            }else {
-                std::cerr << "Ignored truncated packet" << std::endl;
-            }
-            break;
-        }
-    }
-}
 
 bool Server::setUpTimer() {
     timerFd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
