@@ -1,6 +1,7 @@
 #include "GameClient.hpp"
 #include "imgui.h"
 #include "imgui-SFML.h"
+#include <SFML/Graphics/Color.hpp>
 #include <iostream>
 #include <sys/socket.h>
 
@@ -96,6 +97,9 @@ void GameClient::renderMenu() {
 
     ImGui::Begin("Snake login", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 
+    ImGui::InputText("IP", ipBuffer, sizeof(ipBuffer));
+    ImGui::InputInt("Port", &portBuffer, sizeof(portBuffer));
+
     static char nickBuffer[32] = "Player";
     ImGui::InputText("Nick", nickBuffer, sizeof(nickBuffer));
 
@@ -135,12 +139,33 @@ void GameClient::drawSnakes() {
     const auto& players = network.getPlayers();
     for (const auto& player : players) {
         for (const auto& segment : player.body) {
+
+            bool isHead = (&segment == &player.body.front());
+
             sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
 
             snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
-            snakeRect.setFillColor(sf::Color(player.color.r, player.color.g, player.color.b));
+
+            if (isHead) {
+                snakeRect.setFillColor(sf::Color(std::min(player.color.r + 80, 255), std::min(player.color.g + 80, 255), std::min(player.color.b + 80, 255)));
+                snakeRect.setOutlineThickness(-1.5f);
+                snakeRect.setOutlineColor(sf::Color::White);
+            }else{
+                snakeRect.setFillColor(sf::Color(player.color.r, player.color.g, player.color.b));
+            }
 
             window.draw(snakeRect);
+        }
+        
+        if (!player.body.empty() && fontLoaded) {
+            sf::Text nameTag;
+            nameTag.setFont(font);
+            nameTag.setString(player.nick);
+            nameTag.setCharacterSize(10);
+            nameTag.setFillColor(sf::Color::White);
+            auto headPos = player.body.front();
+            nameTag.setPosition(headPos.x * TILE_SIZE, headPos.y * TILE_SIZE - 14.0f);
+            window.draw(nameTag);
         }
     }
 }
@@ -148,10 +173,10 @@ void GameClient::drawSnakes() {
 void GameClient::drawApples() {
     const auto& apples = network.getApples();
     for (const auto& apple : apples) {
-        sf::RectangleShape appleRect(sf::Vector2f(TILE_SIZE - 4.0f, TILE_SIZE - 4.0f));
-        appleRect.setPosition(apple.x * TILE_SIZE + 2.0f, apple.y * TILE_SIZE + 2.0f);
-        appleRect.setFillColor(sf::Color::Red);
-        window.draw(appleRect);
+        sf::CircleShape appleCircle(TILE_SIZE / 2.0f - 2.0f);
+        appleCircle.setPosition(apple.x * TILE_SIZE + 2.0f, apple.y * TILE_SIZE + 2.0f);
+        appleCircle.setFillColor(sf::Color(220, 30, 30));
+        window.draw(appleCircle);
     }
 }
 
