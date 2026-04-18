@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <netinet/tcp.h>
 
 NetworkClient::NetworkClient() {
 
@@ -51,6 +52,9 @@ bool NetworkClient::connectToServer(const std::string& ip, int port, const char*
         close(clientSocketFd);
         return false;
     }
+
+    int flag = 1;
+    setsockopt(clientSocketFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 
     std::cout << "Connected to server IP: " << ip << " and port: " << port << std::endl;
     connected = true;

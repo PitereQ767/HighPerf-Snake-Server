@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <sys/timerfd.h>
 #include <random>
+#include <netinet/tcp.h>
 
 #include "Protocol.hpp"
 
@@ -133,6 +134,9 @@ void Server::handleNewConnection() {
                 break;
             }
         }
+
+        int flag = 1;
+        setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 
         setNonBlocking(clientFd);
 
