@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "Protocol.hpp"
 
@@ -29,6 +30,11 @@ public:
     const std::vector<Protocol::Apple> getApples()const { return apples; }
 
    void sendMoveDirection(Protocol::Direction dirX, Protocol::Direction dirY);
+    int getPing(){return currentPing;}
+    int getPacketsPerSecond(){return lastPacketsPerSecond;}
+    float getLastBytePerSecond(){return lastBytesPerSecond;}
+
+    void updateNetworkState();
 
 private:
    bool setNonBlocking(int fd);
@@ -41,4 +47,15 @@ private:
 
     std::vector<ClientPlayer> players;
     std::vector<Protocol::Apple> apples;
+
+    int currentBytes = 0;
+    int currentPackets = 0;
+    int lastBytesPerSecond = 0;
+    int lastPacketsPerSecond = 0;
+
+    int currentPing = 0;
+    using TimePoint = std::chrono::steady_clock::time_point;
+    TimePoint lastStatTime;
+    TimePoint lastPingSentTime;
+    TimePoint pingRequestTime;
 };

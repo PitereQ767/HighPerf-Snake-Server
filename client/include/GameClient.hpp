@@ -4,7 +4,6 @@
 #include "NetworkClient.hpp"
 
 #include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/Text.hpp>
 
 
 class GameClient {

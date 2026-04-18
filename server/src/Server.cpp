@@ -231,6 +231,11 @@ void Server::processingData(uint8_t *buffer, int clientFd, ssize_t bytesRead) {
             }
             break;
         }
+        case Protocol::MessageType::PING: {
+            uint8_t pongPacket = static_cast<uint8_t>(Protocol::MessageType::PONG);
+            send(clientFd, &pongPacket, sizeof(pongPacket), 0);
+            break;
+        }
     }
 }
 

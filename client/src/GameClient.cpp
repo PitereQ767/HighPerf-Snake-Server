@@ -84,6 +84,7 @@ void GameClient::processEvents() {
 
 void GameClient::update() {
     network.reciveData();
+    network.updateNetworkState();
     ImGui::SFML::Update(window, clock.restart());
     renderUI();
 }
@@ -375,5 +376,37 @@ void GameClient::renderHUD() {
 }
 
 void GameClient::showStatistics() {
+    float startX = 20.0f;
+    float startY = MAP_HEIGHT * TILE_SIZE + 20.0f;
 
+    sf::Text statsText;
+    statsText.setFont(font);
+    statsText.setCharacterSize(14);
+    statsText.setStyle(sf::Text::Bold);
+
+    float fps = ImGui::GetIO().Framerate;
+    statsText.setString("FPS: " + std::to_string(static_cast<int>(fps)));
+    statsText.setFillColor(fps >= 60 ? sf::Color(100, 220, 100) : (fps >= 30 ? sf::Color::Yellow : sf::Color(220, 50, 50)));
+    statsText.setPosition(startX, startY);
+    window.draw(statsText);
+
+    int ping = network.getPing();
+    statsText.setString("Ping: " + std::to_string(ping));
+    statsText.setFillColor(ping < 70 ? sf::Color(100, 220, 100) : (ping < 120 ? sf::Color::Yellow : sf::Color(220, 50, 50)));
+    statsText.setPosition(startX + 60.0f, startY);
+    window.draw(statsText);
+
+    int packets = network.getPacketsPerSecond();
+    statsText.setString("Packets/s: " + std::to_string(packets));
+    statsText.setFillColor(sf::Color(180, 180, 190));
+    statsText.setPosition(startX, startY + 30.0f);
+    window.draw(statsText);
+
+    float kbps = network.getLastBytePerSecond() / 1024.0f;
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%.2f KB/s", kbps);
+
+    statsText.setString("Bandwidth: " + std::string(buffer));
+    statsText.setPosition(startX + 100.0f, startY + 30.0f);
+    window.draw(statsText);
 }

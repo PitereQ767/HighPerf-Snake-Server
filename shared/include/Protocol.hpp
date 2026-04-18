@@ -8,7 +8,9 @@ namespace Protocol {
     enum class MessageType : uint8_t {
         JOIN_REQUEST = 0x01,
         PLAYER_MOVE = 0x02,
-        GAME_STATE = 0x03
+        GAME_STATE = 0x03,
+        PING = 0x62,
+        PONG = 0x63
     };
 
     enum class Direction : int8_t {

@@ -72,6 +72,9 @@ bool NetworkClient::connectToServer(const std::string& ip, int port, const char*
         return false;
     }
 
+    lastStatTime = std::chrono::steady_clock::now();
+    lastPingSentTime = std::chrono::steady_clock::now();
+
     return true;
 }
 
@@ -171,18 +174,24 @@ void NetworkClient::reciveData() {
 
         if (numBytes > 0) {
             size_t offset = 0;
+            currentBytes += numBytes;
+            currentPackets++;
+
             while (offset < numBytes) {
                 auto type = static_cast<Protocol::MessageType>(buffer[offset]);
                 if (type == Protocol::MessageType::GAME_STATE) {
                     size_t consumed = processingClientData(buffer + offset, numBytes - offset);
                     if (consumed == 0) break;
                     offset += consumed;
+                }else if (type == Protocol::MessageType::PONG) {
+                    auto now = std::chrono::steady_clock::now();
+                    currentPing = std::chrono::duration_cast<std::chrono::microseconds>(now - pingRequestTime).count();
+                    return;
                 }else {
                     break;
                 }
             }
             std::cout << "Recived " << numBytes << " bytes from server" << std::endl;
-            // processingClientData(buffer, numBytes);
         }else if (numBytes == 0) {
             std::cout << "Server closed connection" << std::endl;
             disconnectFromServer();
@@ -212,6 +221,29 @@ void NetworkClient::sendMoveDirection(Protocol::Direction dirX, Protocol::Direct
             std::cerr << "Failed to send player move." << std::endl;
             disconnectFromServer();
         }
+    }
+}
+
+void NetworkClient::updateNetworkState() {
+    if (!connected) return;
+
+    auto now = std::chrono::steady_clock::now();
+
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - lastStatTime).count() >= 1) {
+        lastBytesPerSecond = currentBytes;
+        lastPacketsPerSecond = currentPackets;
+
+        currentBytes = 0;
+        currentPackets = 0;
+        lastStatTime = now;
+    }
+
+    if (std::chrono::duration_cast<std::chrono::seconds>(now - lastPingSentTime).count() >= 1) {
+        uint8_t pingPacket = static_cast<uint8_t>(Protocol::MessageType::PING);
+        send(clientSocketFd, &pingPacket, sizeof(pingPacket), MSG_NOSIGNAL);
+
+        pingRequestTime = std::chrono::steady_clock::now();
+        lastPingSentTime = now;
     }
 }
 
