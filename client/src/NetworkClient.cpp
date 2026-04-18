@@ -90,13 +90,13 @@ bool NetworkClient::setNonBlocking(int fd) {
     return (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != -1);
 }
 
-void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
+size_t NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
     auto messageType = static_cast<Protocol::MessageType>(buffer[0]);
 
     if (messageType == Protocol::MessageType::GAME_STATE) {
         size_t offset{1};
 
-        if (bytesRead < 5) return;
+        if (bytesRead < 5) return 0;
 
         uint16_t numApples;
         memcpy(&numApples, buffer + offset, sizeof(numApples));
@@ -157,25 +157,41 @@ void NetworkClient::processingClientData(uint8_t *buffer, ssize_t bytesRead) {
 
             players.push_back(cp);
         }
+        return offset;
     }
 }
 
 void NetworkClient::reciveData() {
     if (!connected) return;
 
-    uint8_t buffer[1024];
+    uint8_t buffer[8192];
 
-    ssize_t numBytes = recv(clientSocketFd, buffer, sizeof(buffer), 0);
+    while (true) {
+        ssize_t numBytes = recv(clientSocketFd, buffer, sizeof(buffer), 0);
 
-    if (numBytes > 0) {
-        std::cout << "Recived " << numBytes << " bytes from server" << std::endl;
-        processingClientData(buffer, numBytes);
-    }else if (numBytes == 0) {
-        std::cout << "Server closed connection" << std::endl;
-        disconnectFromServer();
-    }else {
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+        if (numBytes > 0) {
+            size_t offset = 0;
+            while (offset < numBytes) {
+                auto type = static_cast<Protocol::MessageType>(buffer[offset]);
+                if (type == Protocol::MessageType::GAME_STATE) {
+                    size_t consumed = processingClientData(buffer + offset, numBytes - offset);
+                    if (consumed == 0) break;
+                    offset += consumed;
+                }else {
+                    break;
+                }
+            }
+            std::cout << "Recived " << numBytes << " bytes from server" << std::endl;
+            // processingClientData(buffer, numBytes);
+        }else if (numBytes == 0) {
+            std::cout << "Server closed connection" << std::endl;
             disconnectFromServer();
+            return;
+        }else {
+            if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                disconnectFromServer();
+            }
+            return;
         }
     }
 }

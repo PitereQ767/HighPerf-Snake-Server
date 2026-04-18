@@ -32,7 +32,7 @@ public:
 
 private:
    bool setNonBlocking(int fd);
-   void processingClientData(uint8_t* buffer, ssize_t bytesRead);
+   size_t processingClientData(uint8_t* buffer, ssize_t bytesRead);
     void buildJoinPacket(Protocol::JoinPacket& joinPacket, const char* nick, const float* color);
 
 
