@@ -343,29 +343,42 @@ void GameClient::drawLeaderBoard() {
 }
 
 void GameClient::renderHUD() {
-    // Zakładając okno 1024x768 i mapę 800x600, dajemy to na samym dole po prawej
-    sf::Vector2u windowSize = window.getSize();
-    ImGui::SetNextWindowPos(ImVec2(windowSize.x - 220.0f, windowSize.y - 120.0f), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(200.0f, 100.0f), ImGuiCond_Always);
+    float panelX = MAP_WIDTH * TILE_SIZE + 1.0f;
+    float panelW = static_cast<float>(window.getSize().x) - panelX;
+    float panelH = static_cast<float>(window.getSize().y);
+    float padX = 14.0f;
+    float hudHeight = 90.0f;
+    float hudY = panelH - hudHeight;
+
+    ImGui::SetNextWindowPos(ImVec2(panelX, hudY), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(panelW, hudHeight), ImGuiCond_Always);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(padX, 10.0f));
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.07f, 0.07f, 0.09f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
     ImGuiWindowFlags hudFlags = ImGuiWindowFlags_NoDecoration |
                                 ImGuiWindowFlags_NoMove |
-                                ImGuiWindowFlags_NoSavedSettings |
-                                ImGuiWindowFlags_NoBackground;
+                                ImGuiWindowFlags_NoSavedSettings;
 
     ImGui::Begin("HUD", nullptr, hudFlags);
 
-    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Status: CONNECTED");
+    int ping = network.getPing();
+    ImVec4 statusColor = ping < 50 ? ImVec4(0.3f, 0.85f, 0.3f, 1.0f)
+                        : ping < 120 ? ImVec4(0.85f, 0.8f, 0.2f, 1.0f)
+                        : ImVec4(0.85f, 0.2f, 0.2f, 1.0f);
+
+    ImGui::TextColored(statusColor, ">> ONLINE");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.55f, 1.0f), "  |  %d ms", ping);
     ImGui::Spacing();
 
-    // Podmieniamy domyślne kolory ImGui tylko dla tego jednego przycisku
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.1f, 1.0f));        // Normalny czerwony
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.2f, 0.2f, 1.0f)); // Jasny czerwony po najechaniu
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));  // Ciemny czerwony przy kliknięciu
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.65f, 0.08f, 0.08f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.15f, 0.15f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.45f, 0.0f, 0.0f, 1.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
-
-    if (ImGui::Button("DISCONNECT", ImVec2(-1, 40))) { // -1 oznacza "wypełnij całą szerokość"
+    if (ImGui::Button("DISCONNECT", ImVec2(-1, 32))) {
         network.disconnectFromServer();
     }
 
@@ -373,6 +386,8 @@ void GameClient::renderHUD() {
     ImGui::PopStyleColor(3);
 
     ImGui::End();
+    ImGui::PopStyleColor(2);
+    ImGui::PopStyleVar();
 }
 
 void GameClient::showStatistics() {
