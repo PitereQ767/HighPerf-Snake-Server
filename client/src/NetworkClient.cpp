@@ -175,9 +175,10 @@ void NetworkClient::reciveData() {
         if (numBytes > 0) {
             size_t offset = 0;
             currentBytes += numBytes;
-            currentPackets++;
 
             while (offset < numBytes) {
+                currentPackets++;
+
                 auto type = static_cast<Protocol::MessageType>(buffer[offset]);
                 if (type == Protocol::MessageType::GAME_STATE) {
                     size_t consumed = processingClientData(buffer + offset, numBytes - offset);
@@ -185,8 +186,9 @@ void NetworkClient::reciveData() {
                     offset += consumed;
                 }else if (type == Protocol::MessageType::PONG) {
                     auto now = std::chrono::steady_clock::now();
-                    currentPing = std::chrono::duration_cast<std::chrono::microseconds>(now - pingRequestTime).count();
-                    return;
+                    currentPing = std::chrono::duration_cast<std::chrono::milliseconds>(now - pingRequestTime).count();
+                    offset += 1;
+                    continue;
                 }else {
                     break;
                 }

@@ -244,7 +244,7 @@ void GameClient::drawLeaderBoard() {
     window.draw(divider2);
 
     float panelDownW = window.getSize().x - panelW;
-    float panelDownH = window.getSize().y - MAP_HEIGHT;
+    float panelDownH = static_cast<float>(window.getSize().y) - panelY;
     sf::RectangleShape panelDown(sf::Vector2f(panelDownW, panelDownH));
     panelDown.setPosition(0, panelY + 1.0f);
     panelDown.setFillColor(sf::Color(18, 18, 24));
@@ -376,37 +376,82 @@ void GameClient::renderHUD() {
 }
 
 void GameClient::showStatistics() {
-    float startX = 20.0f;
-    float startY = MAP_HEIGHT * TILE_SIZE + 20.0f;
+    if (!fontLoaded) return;
 
-    sf::Text statsText;
-    statsText.setFont(font);
-    statsText.setCharacterSize(14);
-    statsText.setStyle(sf::Text::Bold);
+    float panelX = 0.0f;
+    float panelY = MAP_HEIGHT * TILE_SIZE + 1.0f;
+    float panelW = MAP_WIDTH * TILE_SIZE;
+    float panelH = static_cast<float>(window.getSize().y) - panelY;
+    float padX = 14.0f;
+    float posX = panelX + padX;
+    float posY = panelY + 12.0f;
+
+    sf::Text title;
+    title.setFont(font);
+    title.setCharacterSize(15);
+    title.setStyle(sf::Text::Bold);
+    title.setFillColor(sf::Color(140, 170, 220));
+    title.setString("NETWORK STATS");
+    title.setPosition(posX, posY);
+    window.draw(title);
+    posY += 22.0f;
+
+    sf::RectangleShape titleLine(sf::Vector2f(panelW - padX * 2, 1.0f));
+    titleLine.setPosition(posX, posY);
+    titleLine.setFillColor(sf::Color(60, 60, 80));
+    window.draw(titleLine);
+    posY += 12.0f;
+
+    float colWidth = (panelW - padX * 2) / 4.0f;
+    float dotRadius = 4.0f;
+
+    struct StatEntry {
+        std::string label;
+        std::string value;
+        sf::Color color;
+    };
 
     float fps = ImGui::GetIO().Framerate;
-    statsText.setString("FPS: " + std::to_string(static_cast<int>(fps)));
-    statsText.setFillColor(fps >= 60 ? sf::Color(100, 220, 100) : (fps >= 30 ? sf::Color::Yellow : sf::Color(220, 50, 50)));
-    statsText.setPosition(startX, startY);
-    window.draw(statsText);
-
     int ping = network.getPing();
-    statsText.setString("Ping: " + std::to_string(ping));
-    statsText.setFillColor(ping < 70 ? sf::Color(100, 220, 100) : (ping < 120 ? sf::Color::Yellow : sf::Color(220, 50, 50)));
-    statsText.setPosition(startX + 60.0f, startY);
-    window.draw(statsText);
-
     int packets = network.getPacketsPerSecond();
-    statsText.setString("Packets/s: " + std::to_string(packets));
-    statsText.setFillColor(sf::Color(180, 180, 190));
-    statsText.setPosition(startX, startY + 30.0f);
-    window.draw(statsText);
-
     float kbps = network.getLastBytePerSecond() / 1024.0f;
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "%.2f KB/s", kbps);
 
-    statsText.setString("Bandwidth: " + std::string(buffer));
-    statsText.setPosition(startX + 100.0f, startY + 30.0f);
-    window.draw(statsText);
+    char kbpsBuf[16];
+    snprintf(kbpsBuf, sizeof(kbpsBuf), "%.1f", kbps);
+
+    sf::Color fpsColor = fps >= 55 ? sf::Color(100, 220, 100) : (fps >= 30 ? sf::Color(220, 200, 50) : sf::Color(220, 50, 50));
+    sf::Color pingColor = ping < 50 ? sf::Color(100, 220, 100) : (ping < 120 ? sf::Color(220, 200, 50) : sf::Color(220, 50, 50));
+
+    StatEntry stats[] = {
+        {"FPS",       std::to_string(static_cast<int>(fps)),  fpsColor},
+        {"PING",      std::to_string(ping) + " ms",           pingColor},
+        {"RECV",      std::to_string(packets) + " pkt/s",     sf::Color(180, 180, 200)},
+        {"BANDWIDTH", std::string(kbpsBuf) + " KB/s",         sf::Color(180, 180, 200)},
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        float colX = posX + i * colWidth;
+
+        sf::CircleShape dot(dotRadius);
+        dot.setFillColor(stats[i].color);
+        dot.setPosition(colX, posY + 2.0f);
+        window.draw(dot);
+
+        sf::Text label;
+        label.setFont(font);
+        label.setCharacterSize(10);
+        label.setFillColor(sf::Color(120, 120, 140));
+        label.setString(stats[i].label);
+        label.setPosition(colX + dotRadius * 2 + 6.0f, posY - 1.0f);
+        window.draw(label);
+
+        sf::Text value;
+        value.setFont(font);
+        value.setCharacterSize(14);
+        value.setStyle(sf::Text::Bold);
+        value.setFillColor(stats[i].color);
+        value.setString(stats[i].value);
+        value.setPosition(colX + dotRadius * 2 + 6.0f, posY + 12.0f);
+        window.draw(value);
+    }
 }
