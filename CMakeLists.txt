@@ -10,4 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_subdirectory(shared)
 add_subdirectory(server)
-add_subdirectory(client)
+
+option(BUILD_CLIENT "Build the graphical client" ON)
+if (BUILD_CLIENT)
+    add_subdirectory(client)
+endif ()
