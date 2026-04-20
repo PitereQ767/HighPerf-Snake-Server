@@ -1,4 +1,7 @@
 #include "GameClient.hpp"
+
+#include <cmath>
+
 #include "imgui.h"
 #include "imgui-SFML.h"
 #include <SFML/Graphics/Color.hpp>
@@ -85,7 +88,14 @@ void GameClient::processEvents() {
 void GameClient::update() {
     network.reciveData();
     network.updateNetworkState();
-    ImGui::SFML::Update(window, clock.restart());
+
+    float dt = clock.restart().asSeconds();
+    ImGui::SFML::Update(window, sf::seconds(dt));
+
+    syncVisualPlayers();
+
+    updateVisualSnakes(dt);
+
     renderUI();
 }
 
@@ -165,33 +175,38 @@ void GameClient::drawFrameArena() {
 void GameClient::drawSnakes() {
     const auto& players = network.getPlayers();
     for (const auto& player : players) {
-        for (const auto& segment : player.body) {
+        auto it = visualPlayers.find(player.playerId);
+        if (it == visualPlayers.end()) continue;
+        auto& vp = it->second;
 
-            bool isHead = (&segment == &player.body.front());
+        for (size_t i = 0; i < vp.visualBody.size() && i < player.body.size(); i++) {
+            bool isHead = (i == 0);
+            auto& vs = vp.visualBody[i];
 
             sf::RectangleShape snakeRect(sf::Vector2f(TILE_SIZE - 1.0f, TILE_SIZE - 1.0f));
-
-            snakeRect.setPosition(segment.x * TILE_SIZE, segment.y * TILE_SIZE);
+            snakeRect.setPosition(vs.currentPos); // interpolowana pozycja
 
             if (isHead) {
-                snakeRect.setFillColor(sf::Color(std::min(player.color.r + 80, 255), std::min(player.color.g + 80, 255), std::min(player.color.b + 80, 255)));
+                snakeRect.setFillColor(sf::Color(
+                    std::min(player.color.r + 80, 255),
+                    std::min(player.color.g + 80, 255),
+                    std::min(player.color.b + 80, 255)));
                 snakeRect.setOutlineThickness(-1.5f);
                 snakeRect.setOutlineColor(sf::Color::White);
-            }else{
+            } else {
                 snakeRect.setFillColor(sf::Color(player.color.r, player.color.g, player.color.b));
             }
-
             window.draw(snakeRect);
         }
-        
-        if (!player.body.empty() && fontLoaded) {
+
+        if (!vp.visualBody.empty() && fontLoaded) {
             sf::Text nameTag;
             nameTag.setFont(font);
             nameTag.setString(player.nick);
             nameTag.setCharacterSize(10);
             nameTag.setFillColor(sf::Color::White);
-            auto headPos = player.body.front();
-            nameTag.setPosition(headPos.x * TILE_SIZE, headPos.y * TILE_SIZE - 14.0f);
+            nameTag.setPosition(vp.visualBody[0].currentPos.x,
+                                vp.visualBody[0].currentPos.y - 14.0f);
             window.draw(nameTag);
         }
     }
@@ -468,5 +483,91 @@ void GameClient::showStatistics() {
         value.setString(stats[i].value);
         value.setPosition(colX + dotRadius * 2 + 6.0f, posY + 12.0f);
         window.draw(value);
+    }
+}
+
+void GameClient::syncVisualPlayers() {
+    const auto& players = network.getPlayers();
+
+    for (const auto& player : players) {
+        auto& vp = visualPlayers[player.playerId];
+
+        if (vp.visualBody.empty()) {
+            initializeVisualPlayer(vp, player);
+            continue;
+        }
+
+        while (vp.visualBody.size() < player.body.size()) {
+            size_t idx = vp.visualBody.size();
+            VisualSegment newSeg;
+            newSeg.currentPos = {player.body[idx].x * TILE_SIZE,
+                                 player.body[idx].y * TILE_SIZE};
+            newSeg.lastTargetPos = newSeg.currentPos;
+            vp.visualBody.push_back(newSeg);
+        }
+        while (vp.visualBody.size() > player.body.size()) {
+            vp.visualBody.pop_back();
+        }
+
+        for (int i = 0; i < player.body.size(); ++i) {
+            sf::Vector2f newTarget(player.body[i].x * TILE_SIZE, player.body[i].y * TILE_SIZE);
+
+            auto& vs = vp.visualBody[i];
+
+            if (vs.lastTargetPos == newTarget) {
+                continue;
+            }
+
+            float dx = newTarget.x - vs.lastTargetPos.x;
+            float dy = newTarget.y - vs.lastTargetPos.y;
+
+            if (dx != 0.f && dy != 0.f) {
+                sf::Vector2f intermediate(newTarget.x, vs.lastTargetPos.y);
+                vs.pathQueue.push(intermediate);
+            }
+
+            vs.pathQueue.push(newTarget);
+            vs.lastTargetPos = newTarget;
+        }
+    }
+}
+
+void GameClient::initializeVisualPlayer(VisualPlayer &vp, const ClientPlayer &player) {
+    vp.visualBody.resize(player.body.size());
+    for (size_t i = 0; i < player.body.size(); ++i) {
+        VisualSegment& vs = vp.visualBody[i];
+        sf::Vector2f gridPixel(player.body[i].x * TILE_SIZE, player.body[i].y * TILE_SIZE);
+
+        vs.currentPos = gridPixel;
+        vs.lastTargetPos = gridPixel;
+
+        while (!vs.pathQueue.empty()) vs.pathQueue.pop();
+    }
+}
+
+void GameClient::updateVisualSnakes(float dt) {
+    float serverTick = 0.1f;
+    float spped = TILE_SIZE / serverTick;
+
+    for (auto& [id, vp] : visualPlayers) {
+        for (auto& vs : vp.visualBody) {
+            float pixeles = spped * dt;
+
+            while (pixeles > 0.f && !vs.pathQueue.empty()) {
+                sf::Vector2f target = vs.pathQueue.front();
+                sf::Vector2f diff = target - vs.currentPos;
+                float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+
+                if (dist <= pixeles) {
+                    vs.currentPos = target;
+                    vs.pathQueue.pop();
+                    pixeles -= dist;
+                }else {
+                    sf::Vector2f direction = diff / dist;
+                    vs.currentPos += direction * pixeles;
+                    pixeles = 0.f;
+                }
+            }
+        }
     }
 }

@@ -5,6 +5,8 @@
 
 #include <SFML/Graphics/Font.hpp>
 
+#include "VisualSegment.h"
+
 
 class GameClient {
 public:
@@ -28,6 +30,10 @@ private:
     void drawLeaderBoard();
     void showStatistics();
 
+    void syncVisualPlayers();
+    void initializeVisualPlayer(VisualPlayer& vp, const ClientPlayer& player);
+    void updateVisualSnakes(float dt);
+
     sf::RenderWindow window;
     sf::Clock clock;
 
@@ -42,4 +48,6 @@ private:
 
     sf::Font font;
     bool fontLoaded{false};
+
+    std::map<uint16_t, VisualPlayer>visualPlayers;
 };
