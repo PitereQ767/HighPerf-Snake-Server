@@ -497,6 +497,7 @@ void GameClient::syncVisualPlayers() {
             continue;
         }
 
+        //Zjedzenie jablka
         while (vp.visualBody.size() < player.body.size()) {
             size_t idx = vp.visualBody.size();
             VisualSegment newSeg;
@@ -507,6 +508,16 @@ void GameClient::syncVisualPlayers() {
         }
         while (vp.visualBody.size() > player.body.size()) {
             vp.visualBody.pop_back();
+        }
+
+        //Wykrywanie smierci
+        sf::Vector2f newHeadPos(player.body[0].x * TILE_SIZE,
+                        player.body[0].y * TILE_SIZE);
+        sf::Vector2f diff = newHeadPos - vp.visualBody[0].lastTargetPos;
+        float dist = std::sqrt(diff.x * diff.x + diff.y * diff.y);
+        if (dist > TILE_SIZE * 2.0f) {
+            initializeVisualPlayer(vp, player);
+            continue;
         }
 
         for (int i = 0; i < player.body.size(); ++i) {
@@ -528,6 +539,15 @@ void GameClient::syncVisualPlayers() {
 
             vs.pathQueue.push(newTarget);
             vs.lastTargetPos = newTarget;
+        }
+
+        for (auto it = visualPlayers.begin(); it != visualPlayers.end(); ) {
+            bool found = false;
+            for (const auto& p : players) {
+                if (p.playerId == it->first) { found = true; break; }
+            }
+            if (!found) it = visualPlayers.erase(it);
+            else ++it;
         }
     }
 }
