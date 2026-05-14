@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # 1. Baza Danych (PostgreSQL)
+  db:
+    image: postgres:15
+    container_name: snake-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret_snake_pass}
+      POSTGRES_DB: snake_leaderboard
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - snake-net
+
+  # 2. Serwer Gry (C++)
+  game-server:
+    build: .
+    container_name: snake-server
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-admin}
+      DB_PASS: ${DB_PASSWORD:-secret_snake_pass}
+      DB_NAME: snake_leaderboard
+    cap_add:
+      - NET_ADMIN
+    networks:
+      - snake-net
+
+  # 3. Tablica Wyników (Python)
+  leaderboard:
+    build: ./leaderboard # dodac ten folder i tam Dockerfile dla Pythona
+    container_name: snake-web
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_USER: ${DB_USER:-admin}
+      DB_PASS: ${DB_PASSWORD:-secret_snake_pass}
+      DB_NAME: snake_leaderboard
+    depends_on:
+      - db
+    networks:
+      - snake-net
+
+networks:
+  snake-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
