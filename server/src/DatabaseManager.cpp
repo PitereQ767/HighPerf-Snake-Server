@@ -44,3 +44,23 @@ DatabaseManager::DatabaseManager() {
         }
     }
 }
+
+void DatabaseManager::saveScore(const std::string &nick, int score) {
+    if (!conn || !conn->is_open()) {
+        std::cerr << "Connection disconnected! Try to re-connect..." << std::endl;
+        try {
+            connect();
+        }catch (std::exception& e) {
+            std::cerr << "Re-connect faild." << std::endl;
+        }
+    }
+
+    try {
+        pqxx::work txn(*conn);
+        txn.exec_prepared("insert_score", nick, score);
+        txn.commit();
+        std::cout << "Result saved: " << nick << " (" << score << ")" << std::endl;
+    }catch (std::exception& e) {
+        std::cerr << "[DB] Write error: " << e.what() << std::endl;
+    }
+}

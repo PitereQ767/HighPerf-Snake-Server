@@ -391,6 +391,8 @@ void Server::spawnApple() { //zakladamy ze mapa jest 40x30
 }
 
 void Server::respawnPlayer(std::shared_ptr<Player> player) {
+    databaseManager.saveScore(player->nick, player->score); //zapis wyniku do bazy danych
+
     static std::random_device rd;
     static std::mt19937 gen(rd());
     std::uniform_int_distribution<> distX(5, MAP_WIDTH - 5);
