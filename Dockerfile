@@ -5,6 +5,7 @@ g++ \
 cmake \
 make \
 iproute2 \
+libpqxx-dev \
 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

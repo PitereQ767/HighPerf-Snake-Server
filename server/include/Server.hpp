@@ -6,6 +6,7 @@
 #include <deque>
 
 #include "Protocol.hpp"
+#include "DatabaseManager.hpp"
 
 
 struct Player {
@@ -45,6 +46,8 @@ private:
     std::vector<Protocol::Apple> apples;
 
     int timerFd{-1};
+
+    DatabaseManager databaseManager;
 
 
     bool setUpServerSocket();
