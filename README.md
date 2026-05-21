@@ -5,7 +5,7 @@ A multiplayer Snake game built on a client-server architecture over TCP. The ser
 ## Architecture
 
 ```
-┌──────────────┐        TCP (port 8080)        ┌──────────────┐
+┌──────────────┐        TCP (port 8080)         ┌──────────────┐
 │    Client    │◄──────────────────────────────►│    Server    │
 │  SFML/ImGui  │   JoinPacket / MovePacket ──►  │  epoll loop  │
 │  60 FPS      │   ◄── GAME_STATE broadcast     │  10 TPS      │
