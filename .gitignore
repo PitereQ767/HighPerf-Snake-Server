@@ -9,3 +9,5 @@ lib/
 *.a
 *.so
 *.env
+leaderboard/02-secret.yaml
+imgui.ini
